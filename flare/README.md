@@ -21,7 +21,7 @@ This Python script generates labeled solar flare time-series data using a rollin
   - Maximum flare class in each window
   - Cumulative flare sub-class values in each window
 - Partitions results into 4 tri-monthly datasets
-- Optionally filters with an external index file
+- Optionally filters with an external index file based on the availability of the input files in SuryaBench
 
 ## Converting Flare Classes to Sub-Class Values
 
