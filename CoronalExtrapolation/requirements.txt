@@ -1,0 +1,2 @@
+joblib==1.4.2
+joblib_progress==1.0.6
