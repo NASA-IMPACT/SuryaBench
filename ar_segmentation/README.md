@@ -20,10 +20,15 @@ The following files need to be modified based on your environment and data locat
 - `./index_file/ar_index_creator.py`  
   Update the `file_path` variable to match the directory containing the generated binary maps (HDF5 format) created by SuryaBench.
 
+- `./dataloader/ar.py`  
+  example of dataloader using our binary maps and input data files (multi-channel 4096x4096 rasters)
+
 
 SuryaBench/  
 ├── main.cpp               # C++ code to generate binary maps  
 ├── config.yaml            # Configuration file (YAML format)  
+├── dataloader/
+│   └── ar.py  # Loads binary maps and 4096×4096 input raster images
 ├── scripts/  
 │   ├── main_code_runner.sh    # Bash script to run main.cpp using Docker or local build  
 │   └── fulldisklist.txt    # list of years and months in fits files  
