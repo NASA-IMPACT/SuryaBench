@@ -5,12 +5,11 @@ This Python script generates labeled solar flare time-series data using a rollin
 
 ## Project Structure
 
-- `flare_catalog_2010-2024.csv` – Input CSV with flare data  
-- `index_all.csv` – Optional input index file for validation filtering  
-- `rolling_window_labeling.py` – Main script  
+- `flare_catalog_2010-2024.csv` – Input CSV file containing flare data  
+- `flare_index_creator.py` – Main script for generating flare labels  
+- `flare.py` – (Dataloader) Loads 4096×4096 input raster images and corresponding flare labels
 
 *If you're interested in how the `flare_catalog_2010-2024.csv` file was created, please visit the repository [here](https://bitbucket.org/gsudmlab/flare_list_creator/src/main/).*
-
 
 
 ## Features
@@ -40,3 +39,4 @@ This Python script generates labeled solar flare time-series data using a rollin
 Install dependencies:
 ```bash
 pip install pandas numpy
+```
