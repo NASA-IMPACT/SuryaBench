@@ -1,0 +1,21 @@
+# Configuration file for PIL Detection Software
+# Author: Jinsu Hong, Ziba Kani, Berkay Aydin, Chetraj Pandey, DMLAB at Georgia State University
+# Email: jhong36@student.gsu.edu
+#----------------------------------------------------
+# DO NOT CHANGE THESE PARAMETERS UNLESS EXPERIMENTING
+parameters:
+  pos_gauss: 50
+  neg_gauss: -50
+  low_threshold: 0.0
+  high_threshold: 0.0
+  dilation_size: 10
+  gap_size: 4
+  size_threshold: 100  # example size threshold value
+  pil_threshold: 14
+  strength_threshold: 1.0
+#----------------------------------------------------
+# SET THESE FOR YOUR DATA
+directories:
+  data_dir: "" # location of magnetogram fits files
+  output_dir: "~/SuryaBench/AR_segmentation/out/pil/"
+  log_dir: "~/SuryaBench/AR_segmentation/out/log/"
