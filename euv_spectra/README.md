@@ -25,7 +25,7 @@ Ensure the following dependencies are installed:
 pip install numpy pandas xarray torch netCDF4
 ```
 
-Ensure that the HelioFM repository is available locally and its modules are importable in your environment (e.g., via sys.path.append()). Additionally, please make sure the configuration file config_spectformer_dgx_test.yaml is present. This file provides the necessary paths and settings for the dataloader to locate the corresponding AIA and HMI files within the HelioFM dataset.
+Ensure that the HelioFM repository is available locally and its modules are importable in your environment (e.g., via sys.path.append()). Additionally, please make sure the configuration file `config_spectformer_dgx_test.yaml` is present and configured appropriately. This file provides the necessary paths and settings for the dataloader to locate the corresponding AIA and HMI files within the HelioFM dataset.
 
 ## How to Use
 
