@@ -3,6 +3,7 @@ import pandas as pd
 import sys
 from pathlib import Path
 import xarray as xr
+import torch
 
 sys.path.append("../../HelioFM")
 
@@ -121,7 +122,7 @@ class EVEDSDataset(HelioNetCDFDataset):
         spectra_array[nan_mask] = np.take(min_per_wavelength, np.where(nan_mask)[1])
 
         # Apply log10 safely
-        # Reason: Helps compress dynamic range (intensities span 10⁻⁶ to 10⁻¹)
+        # Reason: Helps compress dynamic range (intensities span 10^-9 to 10^-1)
         spectra_log = np.log10(spectra_array)
 
         # Global min-max normalization
@@ -182,7 +183,7 @@ class EVEDSDataset(HelioNetCDFDataset):
         base_dictionary, metadata = super().__getitem__(idx=idx)
 
         # We now add the eve intensity label
-        base_dictionary['target'] = self.df_valid_indices.iloc[idx]["normalized_spectrum"]
+        base_dictionary['target'] = torch.tensor(self.df_valid_indices.iloc[idx]["normalized_spectrum"])
         base_dictionary['ds_time']= self.df_valid_indices.index[idx]
 
         return base_dictionary, metadata
