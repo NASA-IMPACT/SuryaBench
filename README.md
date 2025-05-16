@@ -5,9 +5,9 @@
 
 **SuryaBench** is a standardized test benchmark for evaluating the performance of foundational AI models in Heliophysics and Space Weather Science across various tasks.  
 
-The complete dataset along with input files and application-specific instances is available through the Hugging Face platform at [nasa-impact/SuryaBench](https://huggingface.co/datasets/nasa-impact/SuryaBench).
+The complete dataset along with input files and application-specific instances is available through the Hugging Face platform at [nasa-impact/SuryaBench]((https://huggingface.co/collections/nasa-impact/suryabench-68265ce306fc2470c121af7b)).
 
-## Dataset Details
+## Application Dataset Details
 
 SuryaBench contains application datasets related to six key tasks that are structured as prediction, segmentation, or reconstruction. These tasks are related to various aspects of solar and heliospheric events ecosystem and are listed below:
 1. **[Active Region Segmentation](ar_segmentation/)**
@@ -17,7 +17,7 @@ SuryaBench contains application datasets related to six key tasks that are struc
 5. **[Solar Wind Forecasting](solarwind/)**
 6. **[Solar EUV Spectra Modeling](euv_spectra/)**
 
-### Short Description of Applications and Code
+### Short Descriptions of Applications and Code
 
 ## 1. [Active Region Segmentation](ar_segmentation/)
 This collection includes segmentation maps of active regions with magnetic polarity inversion lines (also referred to as ARPILs). The ARPIL data generation is applied on line of sight component of the solar magnetic field. 
@@ -78,8 +78,8 @@ The solar Extreme Ultraviolet (EUV) spectral irradiance is one of the most influ
 ```
 
 ## Dataset Authors
-- Sujit Roy  
-- Dinesha Vasanta Hegde 
+- [Sujit Roy](https://github.com/thesujitroy)*
+- [Dinesha Vasanta Hegde](https://github.com/dinesh-hegde)*
 - Johannes Schmude 
 - Amy Lin 
 - Vishal Gaur 
