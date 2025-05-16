@@ -11,15 +11,18 @@ N_JOBS = 16
 TRAIN_OUT_FILE = './heliofm_downstream_wsa_train_index_new.csv'
 TEST_OUT_FILE = './heliofm_downstream_wsa_test_index_new.csv'
 
-PATH_TO_WSA_DATA = '/data/dedasilv/HelioFM-WSA'
-
-TRAIN_MONTHS = list(range(0, 10))
-TEST_MONTHS = [10, 11, 12]
+PATH_TO_WSA_TRAIN_DATA = '/data/dedasilv/SuryaBench/CoronalFieldExtrapolation/CoronalFieldExtrapolation_train'
+PATH_TO_WSA_TEST_DATA = '/data/dedasilv/SuryaBench/CoronalFieldExtrapolation/CoronalFieldExtrapolation_test'
 
 
 def main():
+    make_csv(PATH_TO_WSA_TRAIN_DATA, TRAIN_OUT_FILE, 'Training Data')
+    make_csv(PATH_TO_WSA_TEST_DATA, TEST_OUT_FILE, 'Test Data')
+
+
+def make_csv(data_path, out_file, message):
     # Use Glob to get list of WSA files
-    wsa_files = glob.glob(f'{PATH_TO_WSA_DATA}/wsa*.fits')
+    wsa_files = glob.glob(f'{data_path}/wsa*.fits')
     wsa_files.sort()
 
     n_files = len(wsa_files)
@@ -39,26 +42,13 @@ def main():
     df = pd.DataFrame(row_dicts)
     df['present'] = 1
 
-    df_train = df[df.month.isin(TRAIN_MONTHS)]
-    df_test = df[df.month.isin(TEST_MONTHS)]
-
-    # Write to STDOUT 
-    print('Training Data')
-    print(df_train.head().to_string())
+    print(message)
+    print(df.head().to_string())
     print()
     
-    print('Test Data')
-    print(df_test.head().to_string())
-    print()
-
-    # Write to dict
-    df_train.to_csv(TRAIN_OUT_FILE, index=0)
-    df_test.to_csv(TEST_OUT_FILE, index=0)
+    df.to_csv(out_file, index=0)
     
-    print(f'Wrote to {TRAIN_OUT_FILE}')
-    print(f'Wrote to {TEST_OUT_FILE}')
-
-    
+    print(f'Wrote to {out_file}')
     
 
 def wsa_file_to_row_dict(wsa_file):
