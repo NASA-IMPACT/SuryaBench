@@ -27,32 +27,38 @@ pip install numpy pandas xarray torch netCDF4
 
 Ensure that the HelioFM repository is available locally and its modules are importable in your environment (e.g., via sys.path.append()).
 
-How to Use:
+## How to Use
 
 Run the prepare_data.ipynb notebook to generate:
 
 X_train.pt: input tensor of shape (N, 13, 4096, 4096)
 
-Y_train.pt: corresponding target spectra of shape (N, 1343)
+Y_train.csv: corresponding target spectra of shape (N, 1343)
 
 Both files will be saved in the current directory.
-Optionally, Y_train.csv will also be saved to allow inspection of the spectra in tabular format.
 
 Inside the prepare_data.ipynb notebook, we use eve_dataloader to construct the PyTorch-ready dataset aligned with EVE spectra, use the EVEDSDataset class like so:
 
 ```bash
 from eve_dataloader import EVEDSDataset
-train_dataset = EVEDSDataset(
-    index_path="path/to/heliofm/index.nc",
-    time_delta_input_minutes=[-12, -6, 0],
-    time_delta_target_minutes=0,
-    n_input_timestamps=3,
-    rollout_steps=1,
-    channels=["aia_171", "aia_193", "aia_211"],
+train_dataset = eve_dataloader.EVEDSDataset(
+    #### All these lines are required by the parent HelioNetCDFDataset class
+    index_path=config.data.train_data_path,
+    time_delta_input_minutes=config.data.time_delta_input_minutes,
+    time_delta_target_minutes=config.data.time_delta_target_minutes,
+    n_input_timestamps=config.data.n_input_timestamps,
+    rollout_steps=config.rollout_steps,
+    channels=config.data.channels,
+    drop_hmi_probablity=config.drop_hmi_probablity,
+    num_mask_aia_channels=config.num_mask_aia_channels,
+    use_latitude_in_learned_flow=config.use_latitude_in_learned_flow,
+    scalers=scalers,
     phase="train",
-    ds_eve_index_path="AIA_EVE_dataset_combined_NAS.nc",
+    #### Put your donwnstream (DS) specific parameters below this line
+    ds_eve_index_path= "../../hfmds/data/AIA_EVE_dataset_combined.nc",
     ds_time_column="train_time",
-    ds_time_tolerance="6m",  # Match timestamps within a 6-minute window
+    ds_time_tolerance = "6m",
+    ds_match_direction = "forward"    
 )
 ```
 To load validation or test data, just change:
