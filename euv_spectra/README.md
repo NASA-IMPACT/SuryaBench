@@ -63,22 +63,22 @@ train_dataset = eve_dataloader.EVEDSDataset(
 ```
 To load validation or test data, just change:
 
-phase → "val" or "test"
+    phase → "val" or "test"
 
-ds_time_column → "val_time" or "test_time"
+    ds_time_column → "val_time" or "test_time"
 
 You can also modify ds_time_tolerance to change the matching window (e.g., "1m", "10s", "15m").
 
 Preprocessing Details
-Zero handling: Zero values in EVE spectra are replaced by the wavelength-wise minimum (avoids -inf when taking log10)
+    Zero handling: Zero values in EVE spectra are replaced by the wavelength-wise minimum (avoids -inf when taking log10)
 
-Log-scaling: Intensities are compressed using log10 for dynamic range reduction
+    Log-scaling: Intensities are compressed using log10 for dynamic range reduction
 
-Normalization: Spectra are scaled globally using predefined min/max values (-9.00 to -1.96 in log10 space)
+    Normalization: Spectra are scaled globally using predefined min/max values (-9.00 to -1.96 in log10 space)
 
 Output Format
 Each training sample returns:
 
-ts: 3D temporal image data from HelioFM inputs (shape: (13, 4096, 4096))
+    ts: 3D temporal image data from HelioFM inputs (shape: (13, 4096, 4096))
 
-target: Normalized EVE spectrum vector (length 1343)
+    target: Normalized EVE spectrum vector (length 1343)
