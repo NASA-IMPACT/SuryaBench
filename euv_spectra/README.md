@@ -31,9 +31,9 @@ Ensure that the HelioFM repository is available locally and its modules are impo
 
 Run the prepare_data.ipynb notebook to generate:
 
-X_train.pt: input tensor of shape (N, 13, 4096, 4096)
+    X_train.pt: input tensor of shape (N, 13, 4096, 4096)
 
-Y_train.csv: corresponding target spectra of shape (N, 1343)
+    Y_train.csv: corresponding target spectra of shape (N, 1343)
 
 Both files will be saved in the current directory.
 
@@ -70,6 +70,7 @@ To load validation or test data, just change:
 You can also modify ds_time_tolerance to change the matching window (e.g., "1m", "10s", "15m").
 
 Preprocessing Details
+
     Zero handling: Zero values in EVE spectra are replaced by the wavelength-wise minimum (avoids -inf when taking log10)
 
     Log-scaling: Intensities are compressed using log10 for dynamic range reduction
