@@ -127,8 +127,8 @@ class EVEDSDataset(HelioNetCDFDataset):
 
         # Global min-max normalization
         # Reason: Required to keep relative shape of spectrum unchanged
-        global_min = 1.0e-09 # np.min(spectra_log)
-        global_max = 0.011   # np.max(spectra_log)
+        global_min = -9.00   # Corresponds to 1.0e-9
+        global_max = -1.96   # Corresponds to 0.011
         spectra_norm = (spectra_log - global_min) / (global_max - global_min)
 
         # Store as DataFrame with list of normalized spectra per timestamp
