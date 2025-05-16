@@ -23,6 +23,7 @@ Ensure the following dependencies are installed:
 
 ```bash
 pip install numpy pandas xarray torch netCDF4
+```
 
 Ensure that the HelioFM repository is available locally and its modules are importable in your environment (e.g., via sys.path.append()).
 
@@ -37,6 +38,7 @@ Optionally, Y_train.csv will also be saved to allow inspection of the spectra in
 Inside the prepare_data.ipynb notebook, we use eve_dataloader
 To construct the PyTorch-ready dataset aligned with EVE spectra, use the EVEDSDataset class like so:
 
+```bash
 from eve_dataloader import EVEDSDataset
 train_dataset = EVEDSDataset(
     index_path="path/to/heliofm/index.nc",
@@ -50,7 +52,7 @@ train_dataset = EVEDSDataset(
     ds_time_column="train_time",
     ds_time_tolerance="6m",  # Match timestamps within a 6-minute window
 )
-
+```
 To load validation or test data, just change:
 
 phase → "val" or "test"
