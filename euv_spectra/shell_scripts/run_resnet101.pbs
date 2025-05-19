@@ -1,0 +1,63 @@
+#PBS -S /usr/bin/sh
+#PBS -N baseline_resnet101
+
+## On NAS, model can be sky_gpu, cas_gpu or mil_a100 which have GPUs
+## cas_gpu node: 24/48 cores 384GB, 4 GPUs (each 32GB)
+## sky_gpu node: 18/36 cores 384GB, 4 GPUs (each 32GB)
+## mil_a100 node: 64 cores / host, 16 / vnode, 256 GB / host, 64 / vnode, 4 GPUs / host, 1 / vnode (each 80GB)
+
+#PBS -l select=1:model=mil_a100:ncpus=16:ngpus=4:mem=480GB
+#PBS -l place=scatter:excl
+
+#PBS -q p_gpu_normal
+#PBS -l walltime=23:59:00
+
+## PBS will email when the job is aborted, begun, ended.
+#PBS -m abe
+#PBS -M vishal.gaur@uah.edu
+
+## join the stderr output to stdout, by default the output file will be placed in place where
+## the qsub is run.  It can be in a different place with PBS -o /path/to/pbs/log/file
+## by default, the output filename is jobname.oJOBID
+
+#PBS -kod -ked
+#PBS -o pbs_logs/resnet101.out    
+#PBS -e pbs_logs/resnet101.err
+
+NUM_NODES=1
+TOTAL_NUM_GPUs=$((NUM_NODES * 4))  # Total number of gpus over all nodes: NUM_NODES * ngpus
+
+export BASE=$PWD
+export MASTER_PORT=19410
+export MASTER_ADDR=$(hostname -i)
+export WORLD_SIZE=$TOTAL_NUM_GPUs
+export NODE_RANK=0
+JOB_ID=$PBS_JOBID
+
+NODES=($(uniq $PBS_NODEFILE))
+echo cluster nodes: ${NODES[@]}
+
+if [[ "$NUM_NODES" -ne ${#NODES[@]} ]]; then
+    echo "Aborting, NUM_NODES and nodes requested are not consistent"
+    exit 2
+fi
+
+# for each node that's not the current node
+C=1
+for node in ${NODES[@]}
+do
+  if [[ $node != $(hostname) ]]
+  then
+    # ssh into each node and run the .sh script with node info
+    # run in background
+    ssh -o StrictHostKeyChecking=no -i $HOME/.ssh/id_rsa $node "cd $BASE; sh shell_scripts/run_resnet101.sh $C $NUM_NODES $WORLD_SIZE $MASTER_ADDR $MASTER_PORT $JOB_ID $PBS_JOBID $TMPDIR" &
+    C=$((C + 1))
+    sleep 2
+  fi
+done
+
+# process on master node runs the last!
+
+$BASE/shell_scripts/run_resnet101.sh 0 $NUM_NODES $WORLD_SIZE $MASTER_ADDR $MASTER_PORT $JOB_ID $PBS_JOBID $TMPDIR
+
+echo "Done with PBS" 
