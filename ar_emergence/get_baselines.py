@@ -1,6 +1,7 @@
 import warnings
 
 from ds_datasets.ar import AREmergenceDataset
+
 warnings.filterwarnings(
     "ignore",
     category=UserWarning,
@@ -30,7 +31,9 @@ import wandb
 import os
 
 from ar_models.baselines import TestModel
+
 # from ds_models.fl_unet import UNet
+
 
 def custom_collate_fn(batch):
     """
@@ -94,14 +97,15 @@ def custom_collate_fn(batch):
 
 def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
 
-
-    train_subset = AREmergenceDataset(config.data.train_data_path,)
-    valid_subset = AREmergenceDataset(config.data.valid_data_path,)
-
+    train_subset = AREmergenceDataset(
+        config.data.train_data_path,
+    )
+    valid_subset = AREmergenceDataset(
+        config.data.valid_data_path,
+    )
 
     print(f"Training set size: {len(train_subset)}")
     print(f"Validation set size: {len(valid_subset)}")
-
 
     dl_kwargs = dict(
         batch_size=config.data.batch_size,
@@ -124,15 +128,15 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
         **dl_kwargs,
     )
 
-    if 'test_model' in config.model.model_type:
+    if "test_model" in config.model.model_type:
         model = TestModel()
     else:
         raise NotImplementedError("Please choose from [persistence, average]")
 
     device = torch.device("cuda" if use_gpu else "cpu")
-    criterion = torch.nn.MSELoss()    
-    running_loss = torch.tensor(0.0,device=device)
-    running_batch = torch.tensor(0,device=device)
+    criterion = torch.nn.MSELoss()
+    running_loss = torch.tensor(0.0, device=device)
+    running_batch = torch.tensor(0, device=device)
 
     for i, (batch, metadata) in enumerate(train_loader):
 
@@ -140,7 +144,6 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
 
         # Move data to device
         data, target = data.to(device), target.to(device).float()
-
 
         outputs = model(data)
         loss = criterion(outputs, target)
@@ -150,11 +153,10 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
         if i % config.wandb_log_train_after == 0:
             print(f"Batch {i+1}/{len(train_loader)}: Loss = {loss.item()}")
 
-    print(f'Total loss: {running_loss.item()/running_batch.item()}')
+    print(f"Total loss: {running_loss.item()/running_batch.item()}")
 
 
 if __name__ == "__main__":
-
 
     parser = argparse.ArgumentParser("SpectFormer Training")
     parser.add_argument(
@@ -179,7 +181,6 @@ if __name__ == "__main__":
         config.dtype = torch.float32
     else:
         raise NotImplementedError("Please choose from [float16,bfloat16,float32]")
-
 
     if not args.gpu:
         raise ValueError(

@@ -1,6 +1,7 @@
 import warnings
 
 from ds_datasets.ar import AREmergenceDataset
+
 warnings.filterwarnings(
     "ignore",
     category=UserWarning,
@@ -35,6 +36,7 @@ from ar_models.spatio_temporal_attention import SpatioTemporalAttention
 from ar_models.st_resnet import SpatioTemporalResNet
 
 # from ds_models.fl_unet import UNet
+
 
 def custom_collate_fn(batch):
     """
@@ -129,10 +131,10 @@ def validate_model_mse(model, valid_loader, device, criterion):
 
     return epoch_loss
 
-def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
-    
-    create_folders(config)
 
+def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
+
+    create_folders(config)
 
     mode = "online" if use_wandb else "disabled"
     slurm_job_id = os.getenv("SLURM_JOB_ID")
@@ -146,13 +148,15 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
     )
     wandb.save(args.config_path)
 
-    train_subset = AREmergenceDataset(config.data.train_data_path,)
-    valid_subset = AREmergenceDataset(config.data.valid_data_path,)
-
+    train_subset = AREmergenceDataset(
+        config.data.train_data_path,
+    )
+    valid_subset = AREmergenceDataset(
+        config.data.valid_data_path,
+    )
 
     print(f"Training set size: {len(train_subset)}")
     print(f"Validation set size: {len(valid_subset)}")
-
 
     dl_kwargs = dict(
         batch_size=config.data.batch_size,
@@ -175,11 +179,11 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
         **dl_kwargs,
     )
 
-    if 'test_model' in config.model.model_type:
+    if "test_model" in config.model.model_type:
         model = TestModel()
-    elif 'spatio_temporal_attention' in config.model.model_type:
+    elif "spatio_temporal_attention" in config.model.model_type:
         model = SpatioTemporalAttention()
-    elif 'spatio_temporal_resnet' in config.model.model_type:
+    elif "spatio_temporal_resnet" in config.model.model_type:
         model = SpatioTemporalResNet(in_channels=5, num_classes=63)
     else:
         raise NotImplementedError("Please choose from [persistence, average]")
@@ -187,9 +191,9 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
     device = torch.device("cuda" if use_gpu else "cpu")
 
     model = model.to(device)
-    criterion = torch.nn.MSELoss(reduction="sum")    
+    criterion = torch.nn.MSELoss(reduction="sum")
     optimizer = torch.optim.Adam(model.parameters(), lr=config.optimizer.learning_rate)
-    
+
     model.train()
 
     for epoch in range(config.optimizer.max_epochs):
@@ -220,13 +224,12 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
 
         epoch_loss = running_loss.item() / running_batch.item()
         print(f"Epoch {epoch+1} completed. Average Loss = {epoch_loss}")
-        
-        
+
         # Validation
         if (epoch + 1) % config.validate_after_epoch == 0:
             valid_loss = validate_model_mse(model, valid_loader, device, criterion)
             print(f"Validation Loss = {valid_loss}")
-            wandb.log( {"valid_loss": valid_loss} , step=epoch+1)
+            wandb.log({"valid_loss": valid_loss}, step=epoch + 1)
 
         # Save model checkpoint
         if (epoch + 1) % config.save_wt_after_iter == 0:
@@ -235,11 +238,15 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
             torch.save(model.state_dict(), fp)
             print(f"Model checkpoint saved at {fp}")
 
-        wandb.log({ "train_loss": epoch_loss,}, step=epoch+1)
+        wandb.log(
+            {
+                "train_loss": epoch_loss,
+            },
+            step=epoch + 1,
+        )
 
 
 if __name__ == "__main__":
-
 
     parser = argparse.ArgumentParser("SpectFormer Training")
     parser.add_argument(
@@ -264,7 +271,6 @@ if __name__ == "__main__":
         config.dtype = torch.float32
     else:
         raise NotImplementedError("Please choose from [float16,bfloat16,float32]")
-
 
     main(config=config, use_gpu=args.gpu, use_wandb=args.wandb, profile=args.profile)
     wandb.finish()

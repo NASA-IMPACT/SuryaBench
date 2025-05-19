@@ -17,16 +17,16 @@ from datasets.helio import HelioNetCDFDataset
 
 
 def main():
-    #os.chdir("../..")
-    #config_path = "downstream_configs/config_spectformer_dgx.yaml"
+    # os.chdir("../..")
+    # config_path = "downstream_configs/config_spectformer_dgx.yaml"
     config_path = "./ds_configs/config_resnet_18.yaml"
-    
+
     config = get_config(config_path)
     scalers = build_scalers(info=config.data.scalers)
 
     train_dataset = ThreeDMagDSDataset(
         #### All these lines are required by the parent HelioNetCDFDataset class
-        index_path='/nobackupnfs1/sroy14/processed_data/Helio/csv_files/index_201005_to_201812.csv',
+        index_path="/nobackupnfs1/sroy14/processed_data/Helio/csv_files/index_201005_to_201812.csv",
         time_delta_input_minutes=config.data.time_delta_input_minutes,
         time_delta_target_minutes=config.data.time_delta_target_minutes,
         n_input_timestamps=config.data.n_input_timestamps,
@@ -37,22 +37,22 @@ def main():
         use_latitude_in_learned_flow=config.use_latitude_in_learned_flow,
         scalers=scalers,
         phase="train",
-        #### Put your donwnstream (DS) specific parameters below this line    
+        #### Put your donwnstream (DS) specific parameters below this line
         ds_3dmag_index_path="/nobackupnfs1/sroy14/processed_data/Helio/daniel/heliofm_downstream_wsa_train_index_new.csv",
-        ds_3dmag_wsa_root='/nobackupnfs1/sroy14/processed_data/Helio/daniel',
-        ds_index_cache='./ds_index_cache.pickle',
-        ds_input_timesteps=[0,-7,-14]
+        ds_3dmag_wsa_root="/nobackupnfs1/sroy14/processed_data/Helio/daniel",
+        ds_index_cache="./ds_index_cache.pickle",
+        ds_input_timesteps=[0, -7, -14],
     )
 
-    print('Dataset length', len(train_dataset))
-    
-    item, metadata = train_dataset[0]
-    
-    print('item keys', item.keys())
-    print('item target shape', item['target'].shape)
-    print('item target', item['target'])
+    print("Dataset length", len(train_dataset))
 
-    
+    item, metadata = train_dataset[0]
+
+    print("item keys", item.keys())
+    print("item target shape", item["target"].shape)
+    print("item target", item["target"])
+
+
 class ThreeDMagDSDataset(HelioNetCDFDataset):
     """
     Template child class of HelioNetCDFDataset to show an example of how to create a
@@ -101,11 +101,11 @@ class ThreeDMagDSDataset(HelioNetCDFDataset):
     ValueError
         Error is raised if there is not overlap between the HelioFM and DS indices
         given a tolerance
-    """ 
+    """
 
     def __init__(
         self,
-        #### All these lines are required by the parent HelioNetCDFDataset class 
+        #### All these lines are required by the parent HelioNetCDFDataset class
         index_path: str,
         time_delta_input_minutes: list[int],
         time_delta_target_minutes: int,
@@ -120,10 +120,10 @@ class ThreeDMagDSDataset(HelioNetCDFDataset):
         #### Put your donwnstream (DS) specific parameters below this line
         ds_3dmag_index_path: str = None,
         ds_3dmag_wsa_root: str = None,
-        ds_index_cache='./ds_index_cache.pickle',            
+        ds_index_cache="./ds_index_cache.pickle",
         ds_input_timesteps: list = [0, -7, -14],
-    ):       
-          
+    ):
+
         ## Initialize parent class
         super().__init__(
             index_path=index_path,
@@ -139,18 +139,18 @@ class ThreeDMagDSDataset(HelioNetCDFDataset):
             phase=phase,
         )
 
-        self.ds_input_timesteps = ds_input_timesteps        
+        self.ds_input_timesteps = ds_input_timesteps
         self.ds_3dmag_wsa_root = ds_3dmag_wsa_root
         if os.path.exists(ds_index_cache):
-            print(f'Loading from {ds_index_cache}')
-            with open(ds_index_cache, 'rb') as fh:
+            print(f"Loading from {ds_index_cache}")
+            with open(ds_index_cache, "rb") as fh:
                 self.df_index = pickle.load(fh)
         else:
             self.df_index = self.get_df_index(ds_3dmag_index_path, ds_input_timesteps)
 
-            print(f'Wrote to {ds_index_cache}')
-            
-            with open(ds_index_cache, 'wb') as fh:
+            print(f"Wrote to {ds_index_cache}")
+
+            with open(ds_index_cache, "wb") as fh:
                 pickle.dump(self.df_index, fh)
 
     def get_df_index(self, ds_3dmag_index_path, ds_input_timesteps):
@@ -158,43 +158,45 @@ class ThreeDMagDSDataset(HelioNetCDFDataset):
         Load 3DMag Dataframe and pair in time with the SDO indices
         based on ds_input_timesteps
         """
-        raw_index = pd.read_csv(ds_3dmag_index_path, parse_dates=['timestamp'])
+        raw_index = pd.read_csv(ds_3dmag_index_path, parse_dates=["timestamp"])
         pair_threshold = timedelta(hours=2)
         valid_indices = self.valid_indices.copy()
         valid_indices.sort()
         valid_indices = pd.Series(valid_indices)
         rows = []
-        
+
         for _, row in tqdm(list(raw_index.iterrows())):
-            if not row['present']:
+            if not row["present"]:
                 continue
 
             row = row.copy()
             unable_to_pair = False
             for input_timestep in ds_input_timesteps:
-                target_timestamp = row['timestamp'] + timedelta(days=input_timestep)
+                target_timestamp = row["timestamp"] + timedelta(days=input_timestep)
                 sdo_idx = np.searchsorted(valid_indices, target_timestamp)
-                #sdo_idx = np.argmin(np.abs(valid_indices - target_timestamp))
-                pair_dist = abs(valid_indices[sdo_idx] - target_timestamp) 
+                # sdo_idx = np.argmin(np.abs(valid_indices - target_timestamp))
+                pair_dist = abs(valid_indices[sdo_idx] - target_timestamp)
                 if pair_dist > pair_threshold:
                     unable_to_pair = True
-                    #print(input_timestep, valid_indices[sdo_idx], target_timestamp)
+                    # print(input_timestep, valid_indices[sdo_idx], target_timestamp)
                     break
-            
-                key = 'sdo' + str(abs(input_timestep))
+
+                key = "sdo" + str(abs(input_timestep))
                 row[key] = sdo_idx
-                
+
             if unable_to_pair:
                 continue
 
             rows.append(row)
-                
+
         df_index = pd.DataFrame(rows)
 
-        print('Dropped ', len(raw_index.index) - len(rows), 'out of', len(raw_index.index))
-        
+        print(
+            "Dropped ", len(raw_index.index) - len(rows), "out of", len(raw_index.index)
+        )
+
         return df_index
-        
+
     def __len__(self):
         return len(self.df_index.index)
 
@@ -203,22 +205,22 @@ class ThreeDMagDSDataset(HelioNetCDFDataset):
         Args:
             idx: Index of sample to load. (Pytorch standard.)
         Returns:
-            Dictionary 
+            Dictionary
         """
         row = self.df_index.iloc[idx]
 
-        # Load SDO data        
+        # Load SDO data
         base_dictionary = {}
         metadata = {}
-        
+
         for i, input_timestep in enumerate(self.ds_input_timesteps):
             # print(f'Loading SDO input {i+1} out of {len(self.ds_input_timesteps)}')
 
-            key = 'sdo' + str(abs(input_timestep))
+            key = "sdo" + str(abs(input_timestep))
             cur_dictionary, cur_metadata = super().__getitem__(idx=row[key])
-            
-            base_dictionary[f'input{i}'] = cur_dictionary
-            metadata[f'input{i}'] = cur_metadata
+
+            base_dictionary[f"input{i}"] = cur_dictionary
+            metadata[f"input{i}"] = cur_metadata
 
         # Load WSA Data
         # print('Loading WSA coefficients')
@@ -226,15 +228,18 @@ class ThreeDMagDSDataset(HelioNetCDFDataset):
         fits_file = fits.open(wsa_path)
         sph_data = fits_file[3].data.copy()
         fits_file.close()
-        
-        base_dictionary['target'] = torch.from_numpy(np.array([
-            sph_data[0, :, :][np.triu_indices(sph_data.shape[1])],
-            sph_data[1, :, :][np.triu_indices(sph_data.shape[1])],
-        ]))
 
-        
+        base_dictionary["target"] = torch.from_numpy(
+            np.array(
+                [
+                    sph_data[0, :, :][np.triu_indices(sph_data.shape[1])],
+                    sph_data[1, :, :][np.triu_indices(sph_data.shape[1])],
+                ]
+            )
+        )
+
         return base_dictionary, metadata
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

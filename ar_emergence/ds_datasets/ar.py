@@ -3,15 +3,15 @@ import h5py
 import numpy as np
 from torch.utils.data import Dataset
 
+
 # Dataset for AR Emergence
 class AREmergenceDataset(Dataset):
-    def __init__(self,  data_dir="/rgroup/aifm/aremerge_skasapis"):
+    def __init__(self, data_dir="/rgroup/aifm/aremerge_skasapis"):
         self.file = h5py.File(data_dir, "r")
         # List all index groups (e.g., 'index_0', 'index_1', ...)
         self.indices = list(self.file.keys())
-        
 
-    def process(self, data,data_type='input'):
+    def process(self, data, data_type="input"):
         """
         Process the data by normalizing it using the provided min and max values.
 
@@ -22,26 +22,28 @@ class AREmergenceDataset(Dataset):
             torch.Tensor: The normalized data.
         """
         # Normalize the data using min-max scaling
-        if data_type == 'input':
+        if data_type == "input":
             # Normalize input data
-            self.data_min = torch.tensor([-7.4745e+07, -3.6508e+08, -1.6605e+08, -3.5536e+07, -7.0342e+01])
-            self.data_max = torch.tensor([2.3280e+07, 1.4658e+08, 5.8470e+07, 2.7218e+07, 4.9013e+02])
+            self.data_min = torch.tensor(
+                [-7.4745e07, -3.6508e08, -1.6605e08, -3.5536e07, -7.0342e01]
+            )
+            self.data_max = torch.tensor(
+                [2.3280e07, 1.4658e08, 5.8470e07, 2.7218e07, 4.9013e02]
+            )
 
-            self.data_min = self.data_min.view(1,5,1)
-            self.data_max = self.data_max.view(1,5,1)
+            self.data_min = self.data_min.view(1, 5, 1)
+            self.data_max = self.data_max.view(1, 5, 1)
             # Ensure data is in the same shape as min and max
             # if data.shape[1] != self.data_min.shape[1]:
             #     raise ValueError(f"Data shape {data.shape} does not match min/max shape {self.data_min.shape}")
             # Normalize the data
-        
-        elif data_type == 'output':
+
+        elif data_type == "output":
             self.data_min = torch.tensor(-12419.5938)
             self.data_max = torch.tensor(2505.3042)
 
         normalized_data = (data - self.data_min) / (self.data_max - self.data_min)
         return normalized_data
-
-
 
     def __len__(self):
         return len(self.indices)
@@ -63,8 +65,7 @@ class AREmergenceDataset(Dataset):
 
         data["input"] = input_tensor
         data["output"] = output_tensor
-        
+
         # input_times_tensor = torch.from_numpy(input_times.astype(np.float32))
         # output_time_tensor = torch.tensor(output_time, dtype=torch.float32)
         return data, metadata
-

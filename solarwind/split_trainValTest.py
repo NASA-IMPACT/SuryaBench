@@ -1,18 +1,19 @@
 """
-Split the dataset into training, validation, and test sets. 
+Split the dataset into training, validation, and test sets.
 """
 
 from sunpy.net import Fido
 from sunpy.net import attrs as a
 from sunpy.timeseries import TimeSeries
-import os 
+import os
 import pandas as pd
 import numpy as np
+
 
 def get_indices(start, end, time_series):
     """
     Get the indices of the time series that fall within the start and end dates.
-    
+
     Parameters
     ----------
     start : str
@@ -21,32 +22,35 @@ def get_indices(start, end, time_series):
         End date in the format 'YYYY-MM-DD'.
     time_series : pandas.DataFrame
         The time series data.
-    
+
     Returns
     -------
     list
         A list of indices that fall within the start and end dates.
     """
     # Convert start and end dates to datetime objects.
-    start = np.datetime64(pd.to_datetime(start,unit='ns'))
-    end = np.datetime64(pd.to_datetime(end,unit='ns'))
+    start = np.datetime64(pd.to_datetime(start, unit="ns"))
+    end = np.datetime64(pd.to_datetime(end, unit="ns"))
     # Get the indices of the time series that fall within the start and end dates.
-    times = pd.to_datetime(time_series['Epoch'].values,unit='ns').to_numpy()
-    start = np.argmin(np.abs(times-start))
-    end = np.argmin(np.abs(times-end))
+    times = pd.to_datetime(time_series["Epoch"].values, unit="ns").to_numpy()
+    start = np.argmin(np.abs(times - start))
+    end = np.argmin(np.abs(times - end))
     indices = np.arange(len(times))[start:end]
     return indices
 
+
 def main(solar_wind_path):
-    savepath = "/".join(solar_wind_path.split("/")[:-1])+"/"
+    savepath = "/".join(solar_wind_path.split("/")[:-1]) + "/"
     # Load the solar wind data.
     solar_wind = pd.read_csv(solar_wind_path)
-    test_dates = [("2011-08-04 00:00", "2011-08-08 00:00"),
-                  ("2015-03-16 00:00", "2015-03-20 00:00"),
-                  ("2017-09-25 00:00", "2017-09-29 00:00")]
+    test_dates = [
+        ("2011-08-04 00:00", "2011-08-08 00:00"),
+        ("2015-03-16 00:00", "2015-03-20 00:00"),
+        ("2017-09-25 00:00", "2017-09-29 00:00"),
+    ]
     # Get the indices of the time series that fall within the test dates.
     test_indices = []
-    for ii,(start, end) in enumerate(test_dates):
+    for ii, (start, end) in enumerate(test_dates):
         indices = get_indices(start, end, solar_wind)
         small_df = solar_wind.iloc[indices]
         # Save the test data to a CSV file.
@@ -90,6 +94,7 @@ def main(solar_wind_path):
     print(f"Number of samples in training set: {len(train_indices)}")
     print(f"Number of samples in validation set: {len(val_indices)}")
     print(f"Number of samples in test set: {len(test_indices)}")
+
 
 if __name__ == "__main__":
     # Path to the solar wind data file.

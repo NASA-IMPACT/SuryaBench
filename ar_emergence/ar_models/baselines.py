@@ -4,30 +4,39 @@ import torch.nn as nn
 
 class TestModel(nn.Module):
     """
-    A simple average model that predicts the average of the observed values as the next value.
-    """
-    def __init__(self):
-        super(TestModel, self).__init__()
+    A simple model that predicts the average value across the time dimension
+    for each spatial cell.
 
-    def forward(self, x):
-        # x is expected to have shape (batch_size, sequence_length, feature_dim)
-        # We compute the mean along the sequence dimension
+    Expects input of shape (batch_size, time_steps, num_channels, spatial_cells)
+    and returns the mean over time steps for the first channel.
+    """
+
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        """
+        Forward pass of the average model.
+
+        Args:
+            x (torch.Tensor): Input tensor of shape
+                              (batch_size, time_steps, num_channels, spatial_cells)
+
+        Returns:
+            torch.Tensor: Output tensor of shape
+                          (batch_size, spatial_cells)
+        """
+        # Extract the first channel (index 0)
         x = x[:, :, 0, :]
         return x.mean(dim=1)
 
 
-# Example usage
 if __name__ == "__main__":
-    # Dummy input tensor of shape (batch_size=2, sequence_length=5, feature_dim=3)
-    x = torch.randn(32,120, 5, 63)
+    # Dummy input tensor of shape (batch_size=32, time_steps=120, num_channels=5, spatial_cells=63)
+    x = torch.randn(32, 120, 5, 63)
 
     average_model = TestModel()
-
-    persistence_output = persistence_model(x)
     average_output = average_model(x)
 
-    print("Persistence Model Output:")
-    print(persistence_output.shape)
-
-    print("\nAverage Model Output:")
-    print(average_output.shape)
+    print("Average Model Output:")
+    print(average_output.shape)  # Expected: torch.Size([32, 63])

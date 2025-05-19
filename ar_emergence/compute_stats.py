@@ -1,7 +1,10 @@
 import torch
 from ds_datasets.ar import AREmergenceDataset
 from tqdm import tqdm
-train_data_path = "/rgroup/aifm/aremerge_skasapis/train_indexed_data_ar_emergence_kasapis_rohit.h5"
+
+train_data_path = (
+    "/rgroup/aifm/aremerge_skasapis/train_indexed_data_ar_emergence_kasapis_rohit.h5"
+)
 train_subset = AREmergenceDataset(train_data_path)
 
 # Initialize min and max tensors
@@ -26,7 +29,7 @@ data_max = None
 
 
 for d, _ in tqdm(train_subset):  # Assuming the dataset returns (data, label)
-    data = d['output']  # Adjust this based on your dataset structure
+    data = d["output"]  # Adjust this based on your dataset structure
 
     batch_min = data.min()
     batch_max = data.max()
@@ -43,5 +46,3 @@ for d, _ in tqdm(train_subset):  # Assuming the dataset returns (data, label)
 
 print("Channel-wise Min:", data_min)
 print("Channel-wise Max:", data_max)
-
-

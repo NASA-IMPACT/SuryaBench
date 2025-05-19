@@ -51,7 +51,9 @@ def validate_model_graphs(model, valid_loader, device, criterion):
     model.eval()
     running_loss = 0.0
     running_batch = 0
-    all_outputs = []; all_targets = []; all_times = []
+    all_outputs = []
+    all_targets = []
+    all_times = []
 
     with torch.no_grad():
         for i, (batch, metadata) in enumerate(valid_loader):
@@ -64,7 +66,7 @@ def validate_model_graphs(model, valid_loader, device, criterion):
             outputs = model(data)
             all_outputs.append(outputs.cpu().numpy())
             all_targets.append(target.cpu().numpy())
-            all_times.append(np.array(metadata['output_time']))
+            all_times.append(np.array(metadata["output_time"]))
 
     # Concatenate all collected data
     all_outputs = np.concatenate(all_outputs, axis=0)
@@ -78,14 +80,18 @@ def validate_model_graphs(model, valid_loader, device, criterion):
     all_times = all_times[sorted_indices]
 
     # Split based on the month
-    ar11698_mask = np.array([
-        int(str(time).split('-')[1]) == 3 if '-' in str(time) else False
-        for time in all_times
-    ])
-    ar11726_mask = np.array([
-        int(str(time).split('-')[1]) == 4 if '-' in str(time) else False
-        for time in all_times
-    ])
+    ar11698_mask = np.array(
+        [
+            int(str(time).split("-")[1]) == 3 if "-" in str(time) else False
+            for time in all_times
+        ]
+    )
+    ar11726_mask = np.array(
+        [
+            int(str(time).split("-")[1]) == 4 if "-" in str(time) else False
+            for time in all_times
+        ]
+    )
 
     # Split outputs, targets, and times
     outputs_ar11698 = all_outputs[ar11698_mask]
@@ -99,67 +105,116 @@ def validate_model_graphs(model, valid_loader, device, criterion):
     plot_ar11726(outputs_ar11726, targets_ar11726, times_ar11726)
     plot_ar(outputs_ar11726, targets_ar11726, times_ar11726)
 
-def plot_ar(outputs, targets, times):   
+
+def plot_ar(outputs, targets, times):
     plt.figure(figsize=(12, 6))
-    plt.plot(times, outputs, label='Model Outputs', color='blue', alpha=0.7)
-    plt.plot(times, targets, label='Targets', color='red', alpha=0.7)
-    plt.xlabel('Time')
-    plt.ylabel('Value')
-    plt.title('Model Outputs vs Targets')
+    plt.plot(times, outputs, label="Model Outputs", color="blue", alpha=0.7)
+    plt.plot(times, targets, label="Targets", color="red", alpha=0.7)
+    plt.xlabel("Time")
+    plt.ylabel("Value")
+    plt.title("Model Outputs vs Targets")
     plt.legend()
     plt.tight_layout()
-    plt.savefig("/nobackupnfs1/sroy14/processed_data/Helio/aremerge_skasapis/code/downstream-heliofm/downstream_apps/ar_kasapis/combined_plot.png")
+    plt.savefig(
+        "/nobackupnfs1/sroy14/processed_data/Helio/aremerge_skasapis/code/downstream-heliofm/downstream_apps/ar_kasapis/combined_plot.png"
+    )
 
 
 def plot_ar11698(outputs, targets, times):
     num_tiles = 6
-    starting_tile = 46 -9
-    outputs = outputs[:, starting_tile:starting_tile + num_tiles]
-    targets = targets[:, starting_tile:starting_tile + num_tiles]
+    starting_tile = 46 - 9
+    outputs = outputs[:, starting_tile : starting_tile + num_tiles]
+    targets = targets[:, starting_tile : starting_tile + num_tiles]
     num_dimensions = outputs.shape[1]
-    fig, axes = plt.subplots(num_dimensions, 1, figsize=(10, 3 * num_dimensions), sharex=True)
-    times = [datetime.strptime(t.decode('utf-8'), '%Y-%m-%d %H:%M:%S.%f') if isinstance(t, bytes) else pd.Timestamp(t).to_pydatetime() for t in times]
+    fig, axes = plt.subplots(
+        num_dimensions, 1, figsize=(10, 3 * num_dimensions), sharex=True
+    )
+    times = [
+        (
+            datetime.strptime(t.decode("utf-8"), "%Y-%m-%d %H:%M:%S.%f")
+            if isinstance(t, bytes)
+            else pd.Timestamp(t).to_pydatetime()
+        )
+        for t in times
+    ]
 
     for dim in range(num_dimensions):
         ax = axes[dim] if num_dimensions > 1 else axes
-        ax.plot(times, outputs[:, dim], label=f'Model Output (Tile {dim+starting_tile+8})', color='blue')
-        ax.plot(times, targets[:, dim], label=f'Target (Tile {dim+starting_tile+8})', color='red')
+        ax.plot(
+            times,
+            outputs[:, dim],
+            label=f"Model Output (Tile {dim+starting_tile+8})",
+            color="blue",
+        )
+        ax.plot(
+            times,
+            targets[:, dim],
+            label=f"Target (Tile {dim+starting_tile+8})",
+            color="red",
+        )
         # Set x-axis to interpret values as dates
         ax.xaxis_date()
         ax.xaxis.set_major_locator(mdates.DayLocator())  # Major ticks once per day
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))  # Format as 'YYYY-MM-DD'
-        ax.set_xlabel('Time')
-        ax.set_ylabel('Value')
-        ax.set_title(f'Model Output vs Target for AR11698 (Tile {dim+starting_tile+8})')
+        ax.xaxis.set_major_formatter(
+            mdates.DateFormatter("%Y-%m-%d")
+        )  # Format as 'YYYY-MM-DD'
+        ax.set_xlabel("Time")
+        ax.set_ylabel("Value")
+        ax.set_title(f"Model Output vs Target for AR11698 (Tile {dim+starting_tile+8})")
         ax.legend()
 
     plt.tight_layout()
-    plt.savefig("/nobackupnfs1/sroy14/processed_data/Helio/aremerge_skasapis/code/downstream-heliofm/downstream_apps/ar_kasapis/ar11698_val_plot.png")
+    plt.savefig(
+        "/nobackupnfs1/sroy14/processed_data/Helio/aremerge_skasapis/code/downstream-heliofm/downstream_apps/ar_kasapis/ar11698_val_plot.png"
+    )
 
 
 def plot_ar11726(outputs, targets, times):
     num_tiles = 6
-    starting_tile = 37 -9
-    outputs = outputs[:, starting_tile:starting_tile + num_tiles]
-    targets = targets[:, starting_tile:starting_tile + num_tiles]
+    starting_tile = 37 - 9
+    outputs = outputs[:, starting_tile : starting_tile + num_tiles]
+    targets = targets[:, starting_tile : starting_tile + num_tiles]
     num_dimensions = outputs.shape[1]
-    fig, axes = plt.subplots(num_dimensions, 1, figsize=(10, 3 * num_dimensions), sharex=True)
-    times = [datetime.strptime(t.decode('utf-8'), '%Y-%m-%d %H:%M:%S.%f') if isinstance(t, bytes) else pd.Timestamp(t).to_pydatetime() for t in times]
+    fig, axes = plt.subplots(
+        num_dimensions, 1, figsize=(10, 3 * num_dimensions), sharex=True
+    )
+    times = [
+        (
+            datetime.strptime(t.decode("utf-8"), "%Y-%m-%d %H:%M:%S.%f")
+            if isinstance(t, bytes)
+            else pd.Timestamp(t).to_pydatetime()
+        )
+        for t in times
+    ]
 
     for dim in range(num_dimensions):
         ax = axes[dim] if num_dimensions > 1 else axes
-        ax.plot(times, outputs[:, dim], label=f'Model Output (Tile {dim+starting_tile+8})', color='blue')
-        ax.plot(times, targets[:, dim], label=f'Target (Tile {dim+starting_tile+8})', color='red')
+        ax.plot(
+            times,
+            outputs[:, dim],
+            label=f"Model Output (Tile {dim+starting_tile+8})",
+            color="blue",
+        )
+        ax.plot(
+            times,
+            targets[:, dim],
+            label=f"Target (Tile {dim+starting_tile+8})",
+            color="red",
+        )
         ax.xaxis_date()
         ax.xaxis.set_major_locator(mdates.DayLocator())  # Major ticks once per day
-        ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))  # Format as 'YYYY-MM-DD'
-        ax.set_xlabel('Time')
-        ax.set_ylabel('Value')
-        ax.set_title(f'Model Output vs Target for AR11698 (Tile {dim+starting_tile+8})')
+        ax.xaxis.set_major_formatter(
+            mdates.DateFormatter("%Y-%m-%d")
+        )  # Format as 'YYYY-MM-DD'
+        ax.set_xlabel("Time")
+        ax.set_ylabel("Value")
+        ax.set_title(f"Model Output vs Target for AR11698 (Tile {dim+starting_tile+8})")
         ax.legend()
 
     plt.tight_layout()
-    plt.savefig("/nobackupnfs1/sroy14/processed_data/Helio/aremerge_skasapis/code/downstream-heliofm/downstream_apps/ar_kasapis/ar11726_val_plot.png")
+    plt.savefig(
+        "/nobackupnfs1/sroy14/processed_data/Helio/aremerge_skasapis/code/downstream-heliofm/downstream_apps/ar_kasapis/ar11726_val_plot.png"
+    )
 
 
 def main(args, device):
@@ -173,13 +228,12 @@ def main(args, device):
             model = SpatioTemporalAttention()
         case _:
             raise ValueError(f"Unknown model type: {args.model_type}")
-        
-    
-    model.load_state_dict(torch.load(args.checkpoint_path, weights_only=True))
-    print('Model loaded from checkpoint', args.checkpoint_path)
 
-    model.to(device)    
-    
+    model.load_state_dict(torch.load(args.checkpoint_path, weights_only=True))
+    print("Model loaded from checkpoint", args.checkpoint_path)
+
+    model.to(device)
+
     valid_subset = AREmergenceDataset(args.valid_data_path)
     dl_kwargs = dict(
         batch_size=args.batch_size,
@@ -189,7 +243,6 @@ def main(args, device):
         drop_last=False,
         collate_fn=custom_collate_fn,
     )
-
 
     valid_loader = DataLoader(
         dataset=valid_subset,
@@ -207,12 +260,33 @@ def main(args, device):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Inference script for the model.")
-    parser.add_argument("--valid_data_path", type=str, required=True, help="Path to the validation data.")
-    parser.add_argument("--checkpoint_path", type=str, required=True, help="Path to the model checkpoint.")
-    parser.add_argument("--batch_size", type=int, default=32, help="Batch size for validation.")
-    parser.add_argument("--num_data_workers", type=int, default=4, help="Number of data workers.")
-    parser.add_argument("--prefetch_factor", type=int, default=2, help="Prefetch factor for DataLoader.")
-    parser.add_argument("--model_type", type=str, default="spatio_temporal_attention", help="Type of the model to be used.")
+    parser.add_argument(
+        "--valid_data_path",
+        type=str,
+        required=True,
+        help="Path to the validation data.",
+    )
+    parser.add_argument(
+        "--checkpoint_path",
+        type=str,
+        required=True,
+        help="Path to the model checkpoint.",
+    )
+    parser.add_argument(
+        "--batch_size", type=int, default=32, help="Batch size for validation."
+    )
+    parser.add_argument(
+        "--num_data_workers", type=int, default=4, help="Number of data workers."
+    )
+    parser.add_argument(
+        "--prefetch_factor", type=int, default=2, help="Prefetch factor for DataLoader."
+    )
+    parser.add_argument(
+        "--model_type",
+        type=str,
+        default="spatio_temporal_attention",
+        help="Type of the model to be used.",
+    )
 
     args = parser.parse_args()
 
