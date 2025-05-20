@@ -355,7 +355,7 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
         print0(f"Checkpoint not found at {checkpoint_path}. Starting from scratch.")
 
     for epoch in range(config.optimizer.max_epochs):
-        
+        model.train()
         running_loss = torch.tensor(0.0,device=device)
         running_batch = torch.tensor(0,device=device)
 
@@ -363,7 +363,6 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
 
             if config.iters_per_epoch_train == i:
                 break
-            model.train()
             # data, target = batch[0]["ts"].squeeze(2), batch[0]["target"]
             data, target = np.transpose(batch[0]["ts"], (1,0,2,3)), batch[0]["target"]
 

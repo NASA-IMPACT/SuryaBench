@@ -125,7 +125,7 @@ class ResnetRegressor(torch.nn.Module):
         self.resnet.conv1 = torch.nn.Conv2d(
             13, 64, kernel_size=7, stride=2, padding=3, bias=False
         )
-        self.resnet.fc = torch.nn.Linear(self.resnet.fc.in_features, 1)
+        self.resnet.fc = torch.nn.Linear(self.resnet.fc.in_features, 2 * 4186)
 
     def forward(self, x):
         x = self.resnet(x)
@@ -158,6 +158,7 @@ def evaluate_model(dataloader, epoch, model, device,run, criterion=torch.nn.MSEL
             
             with autocast(device_type="cuda",dtype=config.dtype):
                 preds = model(data)
+                preds = preds.view_as(target)
                 loss = criterion(preds, target)
 
             reduced_loss = loss.detach()
@@ -311,10 +312,10 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
         model = ResnetRegressor(resnet_type=config.model.model_type).to(rank)
     elif 'unet' in config.model.model_type:
         from ds_models.unet import UNet
-        model = UNet(n_channels=config.model.in_channels, n_classes=1 ).to(rank)
+        model = UNet(n_channels=config.model.in_channels, n_classes=2 ).to(rank)
     elif 'attention_unet' in config.model.model_type:
         from ds_models.attention_unet import AttentionUNet
-        model = AttentionUNet(n_channels=config.model.in_channels, n_classes=1 ).to(rank)
+        model = AttentionUNet(n_channels=config.model.in_channels, n_classes=2 ).to(rank)
 
     # model = model.to(dtype=torch.bfloat16)
 
@@ -364,6 +365,7 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
             optimizer.zero_grad()
             with autocast(device_type="cuda",dtype=config.dtype):
                 outputs = model(data)
+                outputs = outputs.view_as(target)
                 loss = criterion(outputs, target)
 
             scaler.scale(loss).backward()
