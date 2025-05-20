@@ -10,9 +10,10 @@ from utils.config import get_config
 from utils.data import build_scalers
 from datasets.helio import HelioNetCDFDataset
 
+
 class WindSpeedDSDataset(HelioNetCDFDataset):
     """
-    A solar wind class, inheriting from HelioNetCDFDataset. 
+    A solar wind class, inheriting from HelioNetCDFDataset.
 
     HelioFM Parameters
     ------------------
@@ -47,7 +48,7 @@ class WindSpeedDSDataset(HelioNetCDFDataset):
         Name of the column to use as datestamp to compare with HelioFM's index, by default None
     ds_time_delta_in_out: str, optional
         Time delta between the AIA timestamp and the target solar wind speed. Given as a string.
-        For example, 1h, means 1 hour, 4D means 4 days, etc. 
+        For example, 1h, means 1 hour, 4D means 4 days, etc.
     ds_time_tolerance : str, optional
         How much time difference is tolerated when finding matches between HelioFM and the DS, by default None
     ds_match_direction : str, optional
@@ -59,11 +60,11 @@ class WindSpeedDSDataset(HelioNetCDFDataset):
     ValueError
         Error is raised if there is not overlap between the HelioFM and DS indices
         given a tolerance
-    """ 
+    """
 
     def __init__(
         self,
-        #### All these lines are required by the parent HelioNetCDFDataset class 
+        #### All these lines are required by the parent HelioNetCDFDataset class
         index_path: str,
         time_delta_input_minutes: list[int],
         time_delta_target_minutes: int,
@@ -80,9 +81,9 @@ class WindSpeedDSDataset(HelioNetCDFDataset):
         ds_time_column: str = None,
         ds_time_delta_in_out: str = None,
         ds_time_tolerance: str = None,
-        ds_match_direction: str = "forward"
-    ):       
-          
+        ds_match_direction: str = "forward",
+    ):
+
         ## Initialize parent class
         super().__init__(
             index_path=index_path,
@@ -100,34 +101,60 @@ class WindSpeedDSDataset(HelioNetCDFDataset):
 
         # Load ds index and find intersection with HelioFM index
         self.ds_index = pd.read_csv(ds_solar_wind_path)
-        self.ds_time_delta_in_out =  np.timedelta64(ds_time_delta_in_out[0],ds_time_delta_in_out[1])
-        self.ds_index["ds_index"] = pd.to_datetime(self.ds_index[ds_time_column]).values.astype(
-            "datetime64[ns]"
+        self.ds_time_delta_in_out = np.timedelta64(
+            ds_time_delta_in_out[0], ds_time_delta_in_out[1]
         )
+        self.ds_index["ds_index"] = pd.to_datetime(
+            self.ds_index[ds_time_column]
+        ).values.astype("datetime64[ns]")
         self.ds_index.sort_values("ds_index", inplace=True)
-        print("Timedelta",self.ds_time_delta_in_out)
+        print("Timedelta", self.ds_time_delta_in_out)
         # Get the matched solar wind speed time index. We will match index[FM] with index[DS]-dT
-        self.ds_index['sw_match_index']  = self.ds_index['ds_index'] - self.ds_time_delta_in_out
+        self.ds_index["sw_match_index"] = (
+            self.ds_index["ds_index"] - self.ds_time_delta_in_out
+        )
 
         # Implement normalization.  This is going to be DS application specific, no two will look the same
-        self.ds_index["V"] = (self.ds_index["V"] - np.min(self.ds_index["V"]))/np.ptp(self.ds_index["V"])
+        self.ds_index["V"] = (self.ds_index["V"] - np.min(self.ds_index["V"])) / np.ptp(
+            self.ds_index["V"]
+        )
 
-        # Create HelioFM valid indices and find closest match to DS index 
-        self.df_valid_indices = pd.DataFrame({"valid_indices":self.valid_indices}).sort_values("valid_indices")
-        
-        self.df_valid_indices = pd.merge_asof(self.df_valid_indices, self.ds_index, right_on="sw_match_index", left_on="valid_indices", direction=ds_match_direction)
+        # Create HelioFM valid indices and find closest match to DS index
+        self.df_valid_indices = pd.DataFrame(
+            {"valid_indices": self.valid_indices}
+        ).sort_values("valid_indices")
+
+        self.df_valid_indices = pd.merge_asof(
+            self.df_valid_indices,
+            self.ds_index,
+            right_on="sw_match_index",
+            left_on="valid_indices",
+            direction=ds_match_direction,
+        )
         # Remove duplicates keeping closest match
-        self.df_valid_indices["index_delta"] = np.abs(self.df_valid_indices["valid_indices"] - self.df_valid_indices["sw_match_index"])
-        self.df_valid_indices = self.df_valid_indices.sort_values(["sw_match_index", "index_delta"])
-        self.df_valid_indices.drop_duplicates(subset="sw_match_index", keep="first", inplace=True)
+        self.df_valid_indices["index_delta"] = np.abs(
+            self.df_valid_indices["valid_indices"]
+            - self.df_valid_indices["sw_match_index"]
+        )
+        self.df_valid_indices = self.df_valid_indices.sort_values(
+            ["sw_match_index", "index_delta"]
+        )
+        self.df_valid_indices.drop_duplicates(
+            subset="sw_match_index", keep="first", inplace=True
+        )
         # Enforce a maximum time tolerance for matches
         if ds_time_tolerance is not None:
-            self.df_valid_indices = self.df_valid_indices.loc[self.df_valid_indices['index_delta']<=pd.Timedelta(ds_time_tolerance),:]
+            self.df_valid_indices = self.df_valid_indices.loc[
+                self.df_valid_indices["index_delta"] <= pd.Timedelta(ds_time_tolerance),
+                :,
+            ]
             if len(self.df_valid_indices) == 0:
                 raise ValueError("No intersection between HelioFM and DS indices")
 
         # Override valid indices variables to reflect matches between HelioFM and DS
-        self.valid_indices = [pd.Timestamp(date) for date in self.df_valid_indices["valid_indices"]]
+        self.valid_indices = [
+            pd.Timestamp(date) for date in self.df_valid_indices["valid_indices"]
+        ]
         self.adjusted_length = len(self.valid_indices)
         self.df_valid_indices.set_index("valid_indices", inplace=True)
 
