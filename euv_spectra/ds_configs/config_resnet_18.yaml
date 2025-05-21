@@ -9,7 +9,7 @@ data:
   time_delta_input_minutes: [0]
   time_delta_target_minutes: +60
   # n_input_timestamps: 1 #Optional integer to randomly sample time_delta_input_minutes
-  batch_size: 1
+  batch_size: 2
   num_data_workers: 8
   prefetch_factor: 1
   scalers_path: "../../HelioFM/configs/scale_signum_13chan_2011_2014.yaml"

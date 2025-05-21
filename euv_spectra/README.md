@@ -99,7 +99,7 @@ The dataset consists of three splits (70-15-15): train, val, and test, each cont
 - A 1343-dimensional spectrum corresponding to EUV wavelengths ranging from approximately 6.5 to 33.3 nm, observed at a 1-minute cadence
 - EUV measurements from both flare and quiet sun conditions
 - Input shape: (1, 13, 4096, 4096)
-- Output shape: (1)
+- Output shape: (1, 1343)
 
 
 ### 🚀 Example Usage
