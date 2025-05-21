@@ -8,7 +8,7 @@ import argparse
 import sys
 
 # Resolve HelioFM path based on script's location
-sys.path.insert(0, "../../HelioFM")
+sys.path.insert(0, "../HelioFM")
 from utils.config import get_config
 from utils.data import build_scalers
 from torch.utils.data import DataLoader, Subset
@@ -45,7 +45,6 @@ from utils.distributed import (
     print0,
     set_global_seed,
 )
-from ds_models.unet import UNet
 
 def custom_collate_fn(batch):
     """
@@ -348,7 +347,7 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
     else:
         print0(f"Checkpoint not found at {checkpoint_path}. Starting from scratch.")
     for epoch in range(config.optimizer.max_epochs):
-        
+        model.train()
         running_loss = torch.tensor(0.0,device=device)
         running_batch = torch.tensor(0,device=device)
 
@@ -356,7 +355,6 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
 
             if config.iters_per_epoch_train == i:
                 break
-            model.train()
             # data, target = batch[0]["ts"].squeeze(2), batch[0]["target"]
             data, target = np.transpose(batch[0]["ts"], (1,0,2,3)), batch[0]["target"]
 

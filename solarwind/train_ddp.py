@@ -12,7 +12,7 @@ from sklearn.metrics import precision_score, recall_score, f1_score
 from tqdm import tqdm
 
 # Resolve HelioFM path based on script's location
-sys.path.insert(0, "../../HelioFM")
+sys.path.insert(0, "../HelioFM")
 from utils.config import get_config
 from utils.data import build_scalers
 from torch.utils.data import DataLoader, Subset
@@ -48,7 +48,6 @@ from utils.distributed import (
     print0,
     set_global_seed,
 )
-from ds_models.unet import UNet
 
 def custom_collate_fn(batch):
     """

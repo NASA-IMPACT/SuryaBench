@@ -2,8 +2,8 @@ job_id: attention_unet_baseline_channel_13
 data:
   # Use this to point at the paths of HelioFM data indices
   # NAS PATH
-  train_data_path: /nobackupnfs1/sroy14/processed_data/Helio/csv_files/nas/index_2011_to_2015.csv
-  valid_data_path: /nobackupnfs1/sroy14/processed_data/Helio/csv_files/nas/index_2015_7_to_2015_12.csv
+  train_data_path: /nobackupnfs1/sroy14/processed_data/Helio/csv_files/index_2011_2015.csv
+  valid_data_path: /nobackupnfs1/sroy14/processed_data/Helio/csv_files/index_2011_2015.csv
   train_solar_data_path : /nobackupnfs1/sroy14/processed_data/Helio/shah_bahauddin/AIA_EVE_dataset_combined.nc
   valid_solar_data_path : /nobackupnfs1/sroy14/processed_data/Helio/shah_bahauddin/AIA_EVE_dataset_combined.nc
   # DGX PATHS
