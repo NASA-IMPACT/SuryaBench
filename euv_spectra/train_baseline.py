@@ -124,7 +124,8 @@ class ResnetRegressor(torch.nn.Module):
         self.resnet.conv1 = torch.nn.Conv2d(
             13, 64, kernel_size=7, stride=2, padding=3, bias=False
         )
-        self.resnet.fc = torch.nn.Linear(self.resnet.fc.in_features, 1)
+        self.resnet.fc = torch.nn.Linear(self.resnet.fc.in_features, 1343)
+        
 
     def forward(self, x):
         x = self.resnet(x)

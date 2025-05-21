@@ -6,7 +6,7 @@ data:
   train_solar_data_path : /nobackupnfs1/sroy14/processed_data/Helio/shah_bahauddin/AIA_EVE_dataset_combined.nc
   valid_solar_data_path : /nobackupnfs1/sroy14/processed_data/Helio/shah_bahauddin/AIA_EVE_dataset_combined.nc
   channels: ['aia94', 'aia131', 'aia171', 'aia193', 'aia211', 'aia304', 'aia335', 'aia1600', 'hmi_bx', 'hmi_by', 'hmi_bz', 'hmi_m', 'hmi_v']
-  time_delta_input_minutes: [-60,0]
+  time_delta_input_minutes: [0]
   time_delta_target_minutes: +60
   # n_input_timestamps: 1 #Optional integer to randomly sample time_delta_input_minutes
   batch_size: 1
@@ -23,7 +23,7 @@ model:
   time_embedding:
     type: linear      # Options: linear, fourier, perceiver
     n_queries: null   # Integer for perceiver; otherwise null
-    time_dim: 2       # Integer for linear and fourier; otherwise null
+    time_dim: 1       # Integer for linear and fourier; otherwise null
   unet_embed_dim: null
   unet_blocks: null
   unet_concat_activations: false # Whether to concatenate activations (UNet) or not (Autoencoder/bottleneck) in the decoder
