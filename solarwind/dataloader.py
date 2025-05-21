@@ -1,14 +1,15 @@
+import os
+import sys
+
 import numpy as np
 import pandas as pd
-import sys
-import os
 import torch
 
 # Append base path.  May need to be modified if the folder structure changes
 sys.path.insert(0, "../HelioFM")
+from datasets.helio import HelioNetCDFDataset
 from utils.config import get_config
 from utils.data import build_scalers
-from datasets.helio import HelioNetCDFDataset
 
 
 class WindSpeedDSDataset(HelioNetCDFDataset):
@@ -41,7 +42,7 @@ class WindSpeedDSDataset(HelioNetCDFDataset):
         Descriptor of the phase used for this database, by default "train"
 
     Downstream (DS) Parameters
-    -------------------------- 
+    --------------------------
     ds_solar_wind_path : str, optional
         DS index. A path to csv file containing the DS timestamps and the corresponding solar wind speed.
     ds_time_column : str, optional
@@ -185,7 +186,7 @@ class WindSpeedDSDataset(HelioNetCDFDataset):
 
         # We now add the flare intensity label
         target = torch.tensor(self.df_valid_indices.iloc[idx]["V"])
-        base_dictionary['target'] = target
-        base_dictionary['ds_time']= self.df_valid_indices.index[idx]
+        base_dictionary["target"] = target
+        base_dictionary["ds_time"] = self.df_valid_indices.index[idx]
 
         return base_dictionary, metadata

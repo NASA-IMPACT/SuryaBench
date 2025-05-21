@@ -1,10 +1,12 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.amp import GradScaler,autocast
+from torch.amp import autocast
+
 
 class DoubleConv(nn.Module):
     """(conv → BN → ReLU) * 2"""
+
     def __init__(self, in_channels, out_channels, mid_channels=None):
         super().__init__()
         mid_channels = mid_channels or out_channels
@@ -23,6 +25,7 @@ class DoubleConv(nn.Module):
 
 class Down(nn.Module):
     """Encoder: MaxPool → DoubleConv"""
+
     def __init__(self, in_channels, out_channels):
         super().__init__()
         self.block = nn.Sequential(
@@ -39,6 +42,7 @@ class Down(nn.Module):
 # -----------------------------------------------------------------------------
 class AttentionGate(nn.Module):
     """Additive attention gate that filters skip‑connection features."""
+
     def __init__(self, F_g: int, F_l: int, F_int: int):
         super().__init__()
         self.W_g = nn.Sequential(
@@ -67,13 +71,16 @@ class AttentionGate(nn.Module):
 
 class Up(nn.Module):
     """Decoder: upsample → attention (optional) → concat → DoubleConv"""
+
     def __init__(self, in_channels, out_channels, bilinear=False, use_attention=False):
         super().__init__()
         if bilinear:
             self.up = nn.Upsample(scale_factor=2, mode="bilinear", align_corners=True)
             self.conv = DoubleConv(in_channels, out_channels, in_channels // 2)
         else:
-            self.up = nn.ConvTranspose2d(in_channels, in_channels // 2, kernel_size=2, stride=2)
+            self.up = nn.ConvTranspose2d(
+                in_channels, in_channels // 2, kernel_size=2, stride=2
+            )
             self.conv = DoubleConv(in_channels, out_channels)
 
         self.use_attention = use_attention
@@ -92,8 +99,7 @@ class Up(nn.Module):
         # 2) spatial alignment (padding) – handles odd dims
         diffY = x2.size(2) - x1.size(2)
         diffX = x2.size(3) - x1.size(3)
-        x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2,
-                        diffY // 2, diffY - diffY // 2])
+        x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2, diffY // 2, diffY - diffY // 2])
 
         # 3) attention gating (optional)
         if self.attention is not None:
@@ -106,24 +112,29 @@ class Up(nn.Module):
 
 class OutConv(nn.Module):
     """Final 1×1 conv."""
+
     def __init__(self, in_channels, out_channels):
         super().__init__()
         self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=1)
-        self.mpavg = nn.ConstantPad2d(12,0)
-        
+        self.mpavg = nn.ConstantPad2d(12, 0)
+
         self.hf_conv1 = nn.Sequential(
             nn.AdaptiveAvgPool2d(2048),  # 4096 -> 2048
             nn.ReLU(),
-            nn.Conv2d(in_channels=2, out_channels=2, kernel_size=4, stride=2, padding=1),  # 2048 -> 1024
+            nn.Conv2d(
+                in_channels=2, out_channels=2, kernel_size=4, stride=2, padding=1
+            ),  # 2048 -> 1024
             nn.ReLU(),
             nn.AdaptiveAvgPool2d(512),  # 1024 -> 512
             nn.ReLU(),
-            nn.Conv2d(in_channels=2, out_channels=2, kernel_size=4, stride=2, padding=1),  # 512 -> 256
+            nn.Conv2d(
+                in_channels=2, out_channels=2, kernel_size=4, stride=2, padding=1
+            ),  # 512 -> 256
             nn.ReLU(),
             nn.AdaptiveAvgPool2d(128),  # 256 -> 128
             nn.ReLU(),
             nn.Flatten(start_dim=2),
-            nn.Linear(128*128, 4186)
+            nn.Linear(128 * 128, 4186),
         )
 
     def forward(self, x):
@@ -144,7 +155,7 @@ class AttentionUNet(nn.Module):
         self.bilinear = bilinear
 
         # Encoder
-        self.inc   = DoubleConv(n_channels, 64)
+        self.inc = DoubleConv(n_channels, 64)
         self.down1 = Down(64, 128)
         self.down2 = Down(128, 256)
         self.down3 = Down(256, 512)
@@ -169,21 +180,22 @@ class AttentionUNet(nn.Module):
 
         # Decoder path with attentive skip connections
         x = self.up1(x5, x4)
-        x = self.up2(x,  x3)
-        x = self.up3(x,  x2)
-        x = self.up4(x,  x1)
+        x = self.up2(x, x3)
+        x = self.up3(x, x2)
+        x = self.up4(x, x1)
 
         logits = self.outc(x)
         return logits  # for binary segmentation
 
+
 # --- Example Usage ---
-if __name__ == '__main__':
-    B, C, H, W = 1, 13, 4096, 4096 # Example smaller size
+if __name__ == "__main__":
+    B, C, H, W = 1, 13, 4096, 4096  # Example smaller size
 
     # Create a dummy input tensor
     # Ensure the tensor is on the correct device (CPU or GPU)
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    dtype  = torch.bfloat16
+    dtype = torch.bfloat16
     dummy_input = torch.randn(B, C, H, W, device=device, dtype=dtype)
 
     # Instantiate the UNet model
@@ -195,8 +207,8 @@ if __name__ == '__main__':
     try:
         # with torch.no_grad(): # Disable gradient calculation for inference/testing
         # output = model(dummy_input)
-        with autocast(device_type="cuda",dtype=dtype):
-                output = model(dummy_input)
+        with autocast(device_type="cuda", dtype=dtype):
+            output = model(dummy_input)
 
         # Print input and output shapes
         print(f"Input shape: {dummy_input.shape}")
@@ -213,6 +225,7 @@ if __name__ == '__main__':
     # You can print the model summary (requires torchinfo)
     try:
         from torchinfo import summary
+
         summary(model, input_size=(B, C, H, W), dtypes=[dtype])
     except ImportError:
         print("\nInstall torchinfo for model summary: pip install torchinfo")

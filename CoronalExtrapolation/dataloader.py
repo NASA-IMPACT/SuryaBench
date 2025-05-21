@@ -1,19 +1,19 @@
 import os
-from datetime import timedelta
 import pickle
+import sys
+from datetime import timedelta
 
-from astropy.io import fits
 import numpy as np
 import pandas as pd
-import sys
-from tqdm import tqdm
 import torch
+from astropy.io import fits
+from tqdm import tqdm
 
 ## Append base path.  May need to be modified if the folder structure changes
-sys.path.insert(0, "../../HelioFM")
-from train_spectformer import get_config
-from utils.data import build_scalers
+sys.path.insert(0, "../HelioFM")
 from datasets.helio import HelioNetCDFDataset
+from utils.config import get_config
+from utils.data import build_scalers
 
 
 def main():

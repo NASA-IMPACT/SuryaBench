@@ -1,14 +1,15 @@
+import sys
+
 import numpy as np
 import pandas as pd
-import sys
-from pathlib import Path
-import xarray as xr
 import torch
+import xarray as xr
 
 sys.path.insert(0, "../HelioFM")
+from datasets.helio import HelioNetCDFDataset
 from utils.config import get_config
 from utils.data import build_scalers
-from datasets.helio import HelioNetCDFDataset
+
 
 class EVEDSDataset(HelioNetCDFDataset):
     """
@@ -58,11 +59,11 @@ class EVEDSDataset(HelioNetCDFDataset):
     ValueError
         Error is raised if there is not overlap between the HelioFM and DS indices
         given a tolerance
-    """ 
+    """
 
     def __init__(
         self,
-        #### All these lines are required by the parent HelioNetCDFDataset class 
+        #### All these lines are required by the parent HelioNetCDFDataset class
         index_path: str,
         time_delta_input_minutes: list[int],
         time_delta_target_minutes: int,
@@ -76,11 +77,11 @@ class EVEDSDataset(HelioNetCDFDataset):
         phase="train",
         #### Put your donwnstream (DS) specific parameters below this line
         ds_eve_index_path: str = None,
-        ds_time_column: str = None, # choose "train_time", "val_time" or "test_time", the spectra will be chose accordingly.
+        ds_time_column: str = None,  # choose "train_time", "val_time" or "test_time", the spectra will be chose accordingly.
         ds_time_tolerance: str = None,
-        ds_match_direction: str = "forward"
-    ):       
-          
+        ds_match_direction: str = "forward",
+    ):
+
         ## Initialize parent class
         super().__init__(
             index_path=index_path,
@@ -106,7 +107,9 @@ class EVEDSDataset(HelioNetCDFDataset):
         elif ds_time_column.startswith("test"):
             spectra_key = "test_spectra"
         else:
-            raise ValueError(f"Could not determine spectra field from ds_time_column='{ds_time_column}'")
+            raise ValueError(
+                f"Could not determine spectra field from ds_time_column='{ds_time_column}'"
+            )
 
         # Extract timestamps and spectra from NetCDF
         # Reason: Each row has a timestamp and a 1343-point spectrum
@@ -126,33 +129,56 @@ class EVEDSDataset(HelioNetCDFDataset):
 
         # Global min-max normalization
         # Reason: Required to keep relative shape of spectrum unchanged
-        global_min = -9.00   # np.min(spectra_log)
-        global_max = -1.96   # np.max(spectra_log)
+        global_min = -9.00  # np.min(spectra_log)
+        global_max = -1.96  # np.max(spectra_log)
         spectra_norm = (spectra_log - global_min) / (global_max - global_min)
 
         # Store as DataFrame with list of normalized spectra per timestamp
         # Reason: Needed for merge_asof and PyTorch-style indexing
-        self.ds_index = pd.DataFrame({
-            "ds_index": timestamps,
-            "normalized_spectrum": list(spectra_norm)  # each row is a 1343-long list
-        })
+        self.ds_index = pd.DataFrame(
+            {
+                "ds_index": timestamps,
+                "normalized_spectrum": list(
+                    spectra_norm
+                ),  # each row is a 1343-long list
+            }
+        )
         self.ds_index.sort_values("ds_index", inplace=True)
 
-        # Create HelioFM valid indices and find closest match to DS index 
-        self.df_valid_indices = pd.DataFrame({"valid_indices":self.valid_indices}).sort_values("valid_indices")
-        self.df_valid_indices = pd.merge_asof(self.df_valid_indices, self.ds_index, right_on="ds_index", left_on="valid_indices", direction=ds_match_direction)
+        # Create HelioFM valid indices and find closest match to DS index
+        self.df_valid_indices = pd.DataFrame(
+            {"valid_indices": self.valid_indices}
+        ).sort_values("valid_indices")
+        self.df_valid_indices = pd.merge_asof(
+            self.df_valid_indices,
+            self.ds_index,
+            right_on="ds_index",
+            left_on="valid_indices",
+            direction=ds_match_direction,
+        )
         # Remove duplicates keeping closest match
-        self.df_valid_indices["index_delta"] = np.abs(self.df_valid_indices["valid_indices"] - self.df_valid_indices["ds_index"])
-        self.df_valid_indices = self.df_valid_indices.sort_values(["ds_index", "index_delta"])
-        self.df_valid_indices.drop_duplicates(subset="ds_index", keep="first", inplace=True)
+        self.df_valid_indices["index_delta"] = np.abs(
+            self.df_valid_indices["valid_indices"] - self.df_valid_indices["ds_index"]
+        )
+        self.df_valid_indices = self.df_valid_indices.sort_values(
+            ["ds_index", "index_delta"]
+        )
+        self.df_valid_indices.drop_duplicates(
+            subset="ds_index", keep="first", inplace=True
+        )
         # Enforce a maximum time tolerance for matches
         if ds_time_tolerance is not None:
-            self.df_valid_indices = self.df_valid_indices.loc[self.df_valid_indices['index_delta']<=pd.Timedelta(ds_time_tolerance),:]
+            self.df_valid_indices = self.df_valid_indices.loc[
+                self.df_valid_indices["index_delta"] <= pd.Timedelta(ds_time_tolerance),
+                :,
+            ]
             if len(self.df_valid_indices) == 0:
                 raise ValueError("No intersection between HelioFM and DS indices")
 
         # Override valid indices variables to reflect matches between HelioFM and DS
-        self.valid_indices = [pd.Timestamp(date) for date in self.df_valid_indices["valid_indices"]]
+        self.valid_indices = [
+            pd.Timestamp(date) for date in self.df_valid_indices["valid_indices"]
+        ]
         self.adjusted_length = len(self.valid_indices)
         self.df_valid_indices.set_index("valid_indices", inplace=True)
 
@@ -182,7 +208,9 @@ class EVEDSDataset(HelioNetCDFDataset):
         base_dictionary, metadata = super().__getitem__(idx=idx)
 
         # We now add the eve intensity label
-        base_dictionary['target'] = torch.tensor(self.df_valid_indices.iloc[idx]["normalized_spectrum"])
-        base_dictionary['ds_time']= self.df_valid_indices.index[idx]
+        base_dictionary["target"] = torch.tensor(
+            self.df_valid_indices.iloc[idx]["normalized_spectrum"]
+        )
+        base_dictionary["ds_time"] = self.df_valid_indices.index[idx]
 
         return base_dictionary, metadata

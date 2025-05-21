@@ -1,11 +1,12 @@
 import glob
-from astropy.io import fits
-from datetime import datetime
 import os
-from joblib import delayed, Parallel
-from joblib_progress import joblib_progress
-import pandas as pd
 import re
+from datetime import datetime
+
+import pandas as pd
+from astropy.io import fits
+from joblib import Parallel, delayed
+from joblib_progress import joblib_progress
 
 N_JOBS = 16
 TRAIN_OUT_FILE = "./heliofm_downstream_wsa_train_index_new.csv"

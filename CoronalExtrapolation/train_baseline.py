@@ -1,4 +1,5 @@
 import warnings
+
 warnings.filterwarnings(
     "ignore",
     category=UserWarning,
@@ -8,43 +9,39 @@ import argparse
 import sys
 
 # Resolve HelioFM path based on script's location
-sys.path.insert(0, "../../HelioFM")
-from utils.config import get_config
-from utils.data import build_scalers
-from torch.utils.data import DataLoader
-from torchvision import models
+sys.path.insert(0, "../HelioFM")
+import os
+
+import numpy as np
+import torch
+import torch.distributed as dist
+import wandb
 
 # Now try imports
 from dataloader import ThreeDMagDSDataset
-import torch
-from torch.amp import GradScaler,autocast
-
-# set all seeds
-import random
-import numpy as np
-import wandb
-import os
-
-import torch.distributed as dist
-from torch.nn.parallel import DistributedDataParallel
-import torch.multiprocessing as mp
-from torch.utils.data.distributed import DistributedSampler
+from torch.amp import GradScaler, autocast
 from torch.distributed.algorithms._checkpoint.checkpoint_wrapper import (
-    checkpoint_wrapper,
     CheckpointImpl,
     apply_activation_checkpointing,
+    checkpoint_wrapper,
 )
+from torch.nn.parallel import DistributedDataParallel
+from torch.utils.data import DataLoader
+from torch.utils.data.distributed import DistributedSampler
+from torchvision import models
 from utils import distributed
-from utils.io import create_folders
-from utils.log import log
+from utils.config import get_config
+from utils.data import build_scalers
 from utils.distributed import (
-    init_ddp,
-    save_model_singular,
     StatefulDistributedSampler,
+    init_ddp,
     print0,
+    save_model_singular,
     set_global_seed,
 )
-from ds_models.unet import UNet
+from utils.io import create_folders
+from utils.log import log
+
 
 def custom_collate_fn(batch):
     """
@@ -109,7 +106,7 @@ def custom_collate_fn(batch):
 class ResnetRegressor(torch.nn.Module):
     SUPPORTED_RESNETS = ["resnet18", "resnet34", "resnet50", "resnet101", "resnet152"]
 
-    def __init__(self, resnet_type="resnet152", weights_dir = 'resnet_weights'):
+    def __init__(self, resnet_type="resnet152", weights_dir="resnet_weights"):
         super(ResnetRegressor, self).__init__()
         print0(f"Using ResNet type: {resnet_type}")
         if resnet_type not in self.SUPPORTED_RESNETS:
@@ -120,7 +117,9 @@ class ResnetRegressor(torch.nn.Module):
 
         resnet_constructor = getattr(models, resnet_type)
         self.resnet = resnet_constructor(pretrained=True)
-        weights_path = f'./ds_models/{weights_dir}/{resnet_type}.pth'  # Update this path as needed
+        weights_path = (
+            f"./ds_models/{weights_dir}/{resnet_type}.pth"  # Update this path as needed
+        )
         self.resnet.load_state_dict(torch.load(weights_path, map_location="cpu"))
         self.resnet.conv1 = torch.nn.Conv2d(
             13, 64, kernel_size=7, stride=2, padding=3, bias=False
@@ -133,7 +132,7 @@ class ResnetRegressor(torch.nn.Module):
         return x
 
 
-def evaluate_model(dataloader, epoch, model, device,run, criterion=torch.nn.MSELoss()):
+def evaluate_model(dataloader, epoch, model, device, run, criterion=torch.nn.MSELoss()):
     model.eval()
 
     # Initialize accumulators
@@ -147,16 +146,19 @@ def evaluate_model(dataloader, epoch, model, device,run, criterion=torch.nn.MSEL
     running_loss, num_batches = 0.0, 0
     # Inference loop
     with torch.no_grad():
-        for i , (batch, metadata) in enumerate(dataloader):
+        for i, (batch, metadata) in enumerate(dataloader):
 
             if config.iters_per_epoch_valid == i:
                 break
-            data, target = np.transpose(batch['input0']["ts"][0], (1,0,2,3)), batch['target']
+            data, target = (
+                np.transpose(batch["input0"]["ts"][0], (1, 0, 2, 3)),
+                batch["target"],
+            )
 
             # Move data to device
             data, target = data.to(device), target.to(device).float()
-            
-            with autocast(device_type="cuda",dtype=config.dtype):
+
+            with autocast(device_type="cuda", dtype=config.dtype):
                 preds = model(data)
                 preds = preds.view_as(target)
                 loss = criterion(preds, target)
@@ -169,27 +171,29 @@ def evaluate_model(dataloader, epoch, model, device,run, criterion=torch.nn.MSEL
             num_batches += 1
 
             if i % config.wandb_log_train_after == 0 and distributed.is_main_process():
-                print(f'Epoch: {epoch}, batch: {i}, loss: {reduced_loss.item()}')
+                print(f"Epoch: {epoch}, batch: {i}, loss: {reduced_loss.item()}")
                 # print(f"Batch {i}, Loss: {reduced_loss.item()}")
-                log(run,{"val_loss": reduced_loss.item()})
+                log(run, {"val_loss": reduced_loss.item()})
 
             diff = preds - target
             abs_err_sum += torch.abs(diff).sum()
-            sq_err_sum += (diff ** 2).sum()
+            sq_err_sum += (diff**2).sum()
             targ_sum += target.sum()
-            targ_sq_sum += (target ** 2).sum()
+            targ_sq_sum += (target**2).sum()
             total_n += torch.tensor(target.numel(), device=device)
 
     # Aggregate metrics across all ranks
     for t in [abs_err_sum, sq_err_sum, targ_sum, targ_sq_sum, total_n]:
         dist.all_reduce(t, op=dist.ReduceOp.SUM)
-    
+
     mae = abs_err_sum.item() / total_n.item()
     mse = sq_err_sum.item() / total_n.item()
-    rmse = mse ** 0.5
+    rmse = mse**0.5
 
     # R² calculation: 1 - SSE/SST
-    var_y = (targ_sq_sum.item() - (targ_sum.item() ** 2) / total_n.item()) / total_n.item()
+    var_y = (
+        targ_sq_sum.item() - (targ_sum.item() ** 2) / total_n.item()
+    ) / total_n.item()
     r2 = float("nan") if var_y == 0 else 1.0 - (mse / var_y)
 
     # Compute final metrics
@@ -197,26 +201,35 @@ def evaluate_model(dataloader, epoch, model, device,run, criterion=torch.nn.MSEL
 
     # Print and log
     print0(
-            f"Validation — MAE: {mae:.4f}  RMSE: {rmse:.4f}  R2: {r2:.4f}  "
-            f"Avg Loss: {avg_loss:.4f}  Samples: {int(total_n.item())}"
-        )
+        f"Validation — MAE: {mae:.4f}  RMSE: {rmse:.4f}  R2: {r2:.4f}  "
+        f"Avg Loss: {avg_loss:.4f}  Samples: {int(total_n.item())}"
+    )
     log(
-            run,
-            {
-                "valid/mae": mae,
-                "valid/rmse": rmse,
-                "valid/r2": r2,
-                "valid/loss": avg_loss,
-                "valid/total": int(total_n.item()),
-            },
-        )
+        run,
+        {
+            "valid/mae": mae,
+            "valid/rmse": rmse,
+            "valid/r2": r2,
+            "valid/loss": avg_loss,
+            "valid/total": int(total_n.item()),
+        },
+    )
 
     return mae, rmse, r2, avg_loss
 
+
 def wrap_all_checkpoints(model):
     for name, module in model.named_children():
-        if isinstance(module, torch.nn.Sequential) or isinstance(module, torch.nn.Linear) or isinstance(module, torch.nn.Conv2d):
-            setattr(model, name, checkpoint_wrapper(module, checkpoint_impl=CheckpointImpl.NO_REENTRANT))
+        if (
+            isinstance(module, torch.nn.Sequential)
+            or isinstance(module, torch.nn.Linear)
+            or isinstance(module, torch.nn.Conv2d)
+        ):
+            setattr(
+                model,
+                name,
+                checkpoint_wrapper(module, checkpoint_impl=CheckpointImpl.NO_REENTRANT),
+            )
 
 
 def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
@@ -234,7 +247,7 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
 
         job_id = os.getenv("PBS_JOBID")
         print(f"Job ID: {job_id}")
-        print(f'local_rank: {local_rank}, rank: {rank}: WANDB')
+        print(f"local_rank: {local_rank}, rank: {rank}: WANDB")
         run = wandb.init(
             project=config.wandb_project,
             entity="nasa-impact",
@@ -243,48 +256,48 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
             mode="offline",
         )
         wandb.save(args.config_path)
-    
-    torch.distributed.barrier() 
+
+    torch.distributed.barrier()
     train_dataset = ThreeDMagDSDataset(
-    #### All these lines are required by the parent HelioNetCDFDataset class
-    index_path=config.data.train_data_path,
-    time_delta_input_minutes=config.data.time_delta_input_minutes,
-    time_delta_target_minutes=config.data.time_delta_target_minutes,
-    n_input_timestamps=config.data.n_input_timestamps,
-    rollout_steps=config.rollout_steps,
-    channels=config.data.channels,
-    drop_hmi_probablity=config.drop_hmi_probablity,
-    num_mask_aia_channels=config.num_mask_aia_channels,
-    use_latitude_in_learned_flow=config.use_latitude_in_learned_flow,
-    scalers=scalers,
-    phase="train",
-    #### Put your donwnstream (DS) specific parameters below this line
-    ds_3dmag_index_path=config.data.train_3dmag_data_path,
-    ds_3dmag_wsa_root=config.data.root,
-    ds_index_cache='./ds_index_cache.pickle',
-    ds_input_timesteps=[0] 
-)
+        #### All these lines are required by the parent HelioNetCDFDataset class
+        index_path=config.data.train_data_path,
+        time_delta_input_minutes=config.data.time_delta_input_minutes,
+        time_delta_target_minutes=config.data.time_delta_target_minutes,
+        n_input_timestamps=config.data.n_input_timestamps,
+        rollout_steps=config.rollout_steps,
+        channels=config.data.channels,
+        drop_hmi_probablity=config.drop_hmi_probablity,
+        num_mask_aia_channels=config.num_mask_aia_channels,
+        use_latitude_in_learned_flow=config.use_latitude_in_learned_flow,
+        scalers=scalers,
+        phase="train",
+        #### Put your donwnstream (DS) specific parameters below this line
+        ds_3dmag_index_path=config.data.train_3dmag_data_path,
+        ds_3dmag_wsa_root=config.data.root,
+        ds_index_cache="./ds_index_cache.pickle",
+        ds_input_timesteps=[0],
+    )
     print0(f"Total dataset size: {len(train_dataset)}")
 
-    valid_dataset =ThreeDMagDSDataset(
-    #### All these lines are required by the parent HelioNetCDFDataset class
-    index_path=config.data.train_data_path,
-    time_delta_input_minutes=config.data.time_delta_input_minutes,
-    time_delta_target_minutes=config.data.time_delta_target_minutes,
-    n_input_timestamps=config.data.n_input_timestamps,
-    rollout_steps=config.rollout_steps,
-    channels=config.data.channels,
-    drop_hmi_probablity=config.drop_hmi_probablity,
-    num_mask_aia_channels=config.num_mask_aia_channels,
-    use_latitude_in_learned_flow=config.use_latitude_in_learned_flow,
-    scalers=scalers,
-    phase="valid",
-    #### Put your donwnstream (DS) specific parameters below this line
-    ds_3dmag_index_path=config.data.valid_3dmag_data_path,
-    ds_3dmag_wsa_root=config.data.root,
-    ds_index_cache='./ds_index_cache.pickle',
-    ds_input_timesteps=[0]  
-)
+    valid_dataset = ThreeDMagDSDataset(
+        #### All these lines are required by the parent HelioNetCDFDataset class
+        index_path=config.data.train_data_path,
+        time_delta_input_minutes=config.data.time_delta_input_minutes,
+        time_delta_target_minutes=config.data.time_delta_target_minutes,
+        n_input_timestamps=config.data.n_input_timestamps,
+        rollout_steps=config.rollout_steps,
+        channels=config.data.channels,
+        drop_hmi_probablity=config.drop_hmi_probablity,
+        num_mask_aia_channels=config.num_mask_aia_channels,
+        use_latitude_in_learned_flow=config.use_latitude_in_learned_flow,
+        scalers=scalers,
+        phase="valid",
+        #### Put your donwnstream (DS) specific parameters below this line
+        ds_3dmag_index_path=config.data.valid_3dmag_data_path,
+        ds_3dmag_wsa_root=config.data.root,
+        ds_index_cache="./ds_index_cache.pickle",
+        ds_input_timesteps=[0],
+    )
     print0(f"Total dataset size: {len(valid_dataset)}")
     # print0(f"Total dataset size: {len(dataset)}")
     dl_kwargs = dict(
@@ -308,22 +321,23 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
         **dl_kwargs,
     )
 
-    if 'resnet' in config.model.model_type:
+    if "resnet" in config.model.model_type:
         model = ResnetRegressor(resnet_type=config.model.model_type).to(rank)
-    elif 'unet' in config.model.model_type:
+    elif "unet" in config.model.model_type:
         from ds_models.unet import UNet
-        model = UNet(n_channels=config.model.in_channels, n_classes=2 ).to(rank)
-    elif 'attention_unet' in config.model.model_type:
+
+        model = UNet(n_channels=config.model.in_channels, n_classes=2).to(rank)
+    elif "attention_unet" in config.model.model_type:
         from ds_models.attention_unet import AttentionUNet
-        model = AttentionUNet(n_channels=config.model.in_channels, n_classes=2 ).to(rank)
+
+        model = AttentionUNet(n_channels=config.model.in_channels, n_classes=2).to(rank)
 
     # model = model.to(dtype=torch.bfloat16)
 
-    if len(config.model.checkpoint_layers)>0:
+    if len(config.model.checkpoint_layers) > 0:
         print0("Using checkpointing.")
         wrap_all_checkpoints(model)
 
-    
     total_params = sum(p.numel() for p in model.parameters())
     print0(f"Total number of parameters: {total_params:,}")
 
@@ -347,23 +361,26 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
     else:
         print0(f"Checkpoint not found at {checkpoint_path}. Starting from scratch.")
     for epoch in range(config.optimizer.max_epochs):
-        running_loss = torch.tensor(0.0,device=device)
-        running_batch = torch.tensor(0,device=device)
+        model.train()
+        running_loss = torch.tensor(0.0, device=device)
+        running_batch = torch.tensor(0, device=device)
 
         for i, (batch, metadata) in enumerate(train_loader):
 
             if config.iters_per_epoch_train == i:
                 break
-            model.train()
             # data, target = batch[0]["ts"].squeeze(2), batch[0]["target"]
-            data, target = np.transpose(batch['input0']["ts"][0], (1,0,2,3)), batch['target']
+            data, target = (
+                np.transpose(batch["input0"]["ts"][0], (1, 0, 2, 3)),
+                batch["target"],
+            )
 
             # Move data to device
             data, target = data.to(device), target.to(device).float()
 
             # Forward pass
             optimizer.zero_grad()
-            with autocast(device_type="cuda",dtype=config.dtype):
+            with autocast(device_type="cuda", dtype=config.dtype):
                 outputs = model(data)
                 outputs = outputs.view_as(target)
                 loss = criterion(outputs, target)
@@ -382,27 +399,27 @@ def main(config, use_gpu: bool, use_wandb: bool, profile: bool):
 
             # Print/log only from rank 0
             if i % config.wandb_log_train_after == 0 and distributed.is_main_process():
-                print(f'Epoch: {epoch}, batch: {i}, loss: {reduced_loss.item()}')
+                print(f"Epoch: {epoch}, batch: {i}, loss: {reduced_loss.item()}")
                 # print(f"Batch {i}, Loss: {reduced_loss.item()}")
-                log(run,{"train_loss": reduced_loss.item()})
-            
+                log(run, {"train_loss": reduced_loss.item()})
+
             if (i + 1) % config.save_wt_after_iter == 0:
                 print0(f"Reached save_wt_after_iter ({config.save_wt_after_iter}).")
                 fp = os.path.join(config.path_weights, "checkpoint.pth")
-                distributed.save_model_singular(model, fp, parallelism=config.parallelism)                                        
+                distributed.save_model_singular(
+                    model, fp, parallelism=config.parallelism
+                )
 
         dist.all_reduce(running_loss, op=dist.ReduceOp.SUM)
         dist.all_reduce(running_batch, op=dist.ReduceOp.SUM)
 
-        log(run,{"epoch_loss": running_loss / running_batch})
+        log(run, {"epoch_loss": running_loss / running_batch})
 
-        fp = os.path.join(
-            config.path_weights, f"epoch_{epoch}.pth"
-        )
+        fp = os.path.join(config.path_weights, f"epoch_{epoch}.pth")
         save_model_singular(model, fp, parallelism=config.parallelism)
         print0(f"Epoch {epoch}: Model saved at {fp}")
-        
-        evaluate_model(valid_loader, epoch, model, device,run, criterion)
+
+        evaluate_model(valid_loader, epoch, model, device, run, criterion)
 
 
 if __name__ == "__main__":

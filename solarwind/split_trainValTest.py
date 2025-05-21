@@ -2,12 +2,13 @@
 Split the dataset into training, validation, and test sets.
 """
 
+import os
+
+import numpy as np
+import pandas as pd
 from sunpy.net import Fido
 from sunpy.net import attrs as a
 from sunpy.timeseries import TimeSeries
-import os
-import pandas as pd
-import numpy as np
 
 
 def get_indices(start, end, time_series):
