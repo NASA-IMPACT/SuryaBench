@@ -34,7 +34,7 @@ torchrun \
   --rdzv_id $RDZV_ID \
   --rdzv_endpoint "$RDZV_ADDR:$RDZV_PORT" \
   --rdzv_backend c10d\
-  train_ddp.py \
+  train_baseline.py \
     --config_path ./ds_configs/config_resnet_101.yaml \
     --gpu \
     --wandb

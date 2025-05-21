@@ -10,59 +10,46 @@ Daniel da Silva, [daniel.e.dasilva@nasa.gov](daniel.e.dasilva@nasa.gov)
 
 ### 📊 Dataset Description
 
-**Dataset can be found at [NASA-IMPACT HuggingFace Repository](https://huggingface.co/datasets/nasa-impact/ar_emergence)**
+**Dataset can be found at [NASA-IMPACT HuggingFace Repository](https://huggingface.co/datasets/nasa-impact/surya-bench-coronal-extrapolation)**
 
-Each sample in the dataset corresponds to a tracked active region and is structured as follows:
-- Input shape: (120, 5, 63)
-- 120 timesteps per sample (≈24 hours at 12-minute cadence)
-- 5 physical quantities:
-- 1: Mean unsigned magnetic flux
-- 2–5: Doppler velocity acoustic power in frequency bands: 2–3, 3–4, 4–5, and 5–6 mHz
-- 63 spatial tiles, extracted from a 9×9 grid with top and bottom rows removed (7×9 = 63).
-- Input timestamps: (120,)
-- Output shape: (63,)
-- Scalar continuum intensity prediction per tile
-- Output timestamp:  (single value per prediction)
+- Input shape: (1, 13, 4096, 4096)
+- Input timestamps: (1,)
+- Output shape: (2, 4186)
 
 
 ### 🚀 Example Usage
 
 For training run the below code
 
-1. **SpatioTemporalAttention Transformer**
+1. **Resnet Models**
+Multiple resnet models as described below have been used to train the baseline. The only change needed to run the baselines in the given command is to change the model name.
+- Resnet18
+- Resnet34
+- Resnet50
+- Resnet101
+- Resnet152
 ```
-python train_baselines.py --config_path ./ds_configs/config_spectformer_ar_sta.yaml --gpu 
+python train_baseline.py --config_path ./ds_configs/config_resnet_18.yaml --gpu 
 ```
 
-2. **SpatioTemporalResNet**
 ```
-python train_baselines.py --config_path ./ds_configs/config_ar_stresnet.yaml --gpu 
+torchrun --nnodes=1 --nproc_per_node=1 train_baseline.py --config_path ./ds_configs/config_resnet_18.yaml --gpu
 ```
 
-### 🧠 Models
+2. **AttentionUNet**
+```
+python train_baseline.py --config_path ./ds_configs/config_attention_unet.yaml --gpu 
+```
 
-1. **SpatioTemporalAttention Transformer**
+```
+torchrun --nnodes=1 --nproc_per_node=1 train_baseline.py --config_path ./ds_configs/config_attention_unet.yaml --gpu
+```
 
-    Input shape: `(B, 120, 5, 63)`
-    Output shape: `(B, 63)`
+3. **UNet**
+```
+python train_baseline.py --config_path ./ds_configs/config_unet.yaml --gpu 
+```
 
-    A two-stage transformer architecture:
-    - Temporal Transformer: models per-tile temporal evolution.
-    - Spatial Transformer: models spatial interactions at each timestep.
-
-    Core features:
-    - Sinusoidal positional encodings for time and space.
-    - Per-tile temporal encoding.
-    - Per-timestep spatial encoding.
-    - Mean-pooling over time followed by per-cell regression.
-
-
-2. **SpatioTemporalResNet**
-
-    Input shape: `(B, 120, 5, 63)`
-    Output shape: `(B, 63)`
-
-    A 3D ResNet-18 variant adapted for spatiotemporal input:
-    - Uses PyTorch’s r3d_18 as the backbone.
-    - First 3D convolution modified to accept 5 channels.
-    - Output layer adapted to predict 63 values (one per tile).
+```
+torchrun --nnodes=1 --nproc_per_node=1 train_baseline.py --config_path ./ds_configs/config_unet.yaml --gpu
+```

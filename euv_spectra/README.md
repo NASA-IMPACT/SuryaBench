@@ -84,67 +84,57 @@ Each training sample returns:
 
     target: Normalized EVE spectrum vector (length 1343)
 
-## Active Region Emergence Prediction
+## EVE EUV Spectra Prediction 
 
-This  contains code and model implementations for forecasting continuum intensity from spatiotemporal solar data. The dataset includes physical measurements from active regions on the Sun, preprocessed into a format that captures both spatial and temporal dynamics.
+This  contains code and model implementations for predicting the EVE spectra from spatiotemporal solar data. The dataset contains hundreds of thousands of temporally aligned AIA image cubes and EUV spectra, covering Solar Cycle 24 and parts of Solar Cycle 25, and including both quiet-Sun and active-region conditions. 
 
 ---
 
 ### 📊 Dataset Description
 
-**Dataset can be found at [NASA-IMPACT HuggingFace Repository](https://huggingface.co/datasets/nasa-impact/ar_emergence)**
+**Dataset can be found at [NASA-IMPACT HuggingFace Repository](https://huggingface.co/datasets/nasa-impact/surya-bench-euv-spectra)**
 
-Each sample in the dataset corresponds to a tracked active region and is structured as follows:
-- Input shape: (120, 5, 63)
-- 120 timesteps per sample (≈24 hours at 12-minute cadence)
-- 5 physical quantities:
-- 1: Mean unsigned magnetic flux
-- 2–5: Doppler velocity acoustic power in frequency bands: 2–3, 3–4, 4–5, and 5–6 mHz
-- 63 spatial tiles, extracted from a 9×9 grid with top and bottom rows removed (7×9 = 63).
-- Input timestamps: (120,)
-- Output shape: (63,)
-- Scalar continuum intensity prediction per tile
-- Output timestamp:  (single value per prediction)
+The dataset consists of three splits (70-15-15): train, val, and test, each containing:
+- A timestamp
+- A 1343-dimensional spectrum corresponding to EUV wavelengths ranging from approximately 6.5 to 33.3 nm, observed at a 1-minute cadence
+- EUV measurements from both flare and quiet sun conditions
+- Input shape: (1, 13, 4096, 4096)
+- Output shape: (1)
 
 
 ### 🚀 Example Usage
 
 For training run the below code
 
-1. **SpatioTemporalAttention Transformer**
+1. **Resnet Models**
+Multiple resnet models as described below have been used to train the baseline. The only change needed to run the baselines in the given command is to change the model name.
+- Resnet18
+- Resnet34
+- Resnet50
+- Resnet101
+- Resnet152
 ```
-python train_baselines.py --config_path ./ds_configs/config_spectformer_ar_sta.yaml --gpu 
+python train_baseline.py --config_path ./ds_configs/config_resnet_18.yaml --gpu 
 ```
 
-2. **SpatioTemporalResNet**
 ```
-python train_baselines.py --config_path ./ds_configs/config_ar_stresnet.yaml --gpu 
+torchrun --nnodes=1 --nproc_per_node=1 train_baseline.py --config_path ./ds_configs/config_resnet_18.yaml --gpu
 ```
 
-### 🧠 Models
+2. **AttentionUNet**
+```
+python train_baseline.py --config_path ./ds_configs/config_attention_unet.yaml --gpu 
+```
 
-1. **SpatioTemporalAttention Transformer**
+```
+torchrun --nnodes=1 --nproc_per_node=1 train_baseline.py --config_path ./ds_configs/config_attention_unet.yaml --gpu
+```
 
-    Input shape: `(B, 120, 5, 63)`
-    Output shape: `(B, 63)`
+3. **UNet**
+```
+python train_baseline.py --config_path ./ds_configs/config_unet.yaml --gpu 
+```
 
-    A two-stage transformer architecture:
-    - Temporal Transformer: models per-tile temporal evolution.
-    - Spatial Transformer: models spatial interactions at each timestep.
-
-    Core features:
-    - Sinusoidal positional encodings for time and space.
-    - Per-tile temporal encoding.
-    - Per-timestep spatial encoding.
-    - Mean-pooling over time followed by per-cell regression.
-
-
-2. **SpatioTemporalResNet**
-
-    Input shape: `(B, 120, 5, 63)`
-    Output shape: `(B, 63)`
-
-    A 3D ResNet-18 variant adapted for spatiotemporal input:
-    - Uses PyTorch’s r3d_18 as the backbone.
-    - First 3D convolution modified to accept 5 channels.
-    - Output layer adapted to predict 63 values (one per tile).
+```
+torchrun --nnodes=1 --nproc_per_node=1 train_baseline.py --config_path ./ds_configs/config_unet.yaml --gpu
+```
