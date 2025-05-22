@@ -3,11 +3,12 @@ Download solar wind data using sunpy.
 The arguments are all given default values to generate the solar wind dataset in SuryaBench.
 """
 
+import os
+
+import matplotlib.pyplot as plt
 from sunpy.net import Fido
 from sunpy.net import attrs as a
 from sunpy.timeseries import TimeSeries
-import os
-import matplotlib.pyplot as plt
 
 
 def pull_solarwind(

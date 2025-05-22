@@ -83,3 +83,58 @@ Each training sample returns:
     ts: 3D temporal image data from HelioFM inputs (shape: (13, 4096, 4096))
 
     target: Normalized EVE spectrum vector (length 1343)
+
+## EVE EUV Spectra Prediction 
+
+This  contains code and model implementations for predicting the EVE spectra from spatiotemporal solar data. The dataset contains hundreds of thousands of temporally aligned AIA image cubes and EUV spectra, covering Solar Cycle 24 and parts of Solar Cycle 25, and including both quiet-Sun and active-region conditions. 
+
+---
+
+### 📊 Dataset Description
+
+**Dataset can be found at [NASA-IMPACT HuggingFace Repository](https://huggingface.co/datasets/nasa-impact/surya-bench-euv-spectra)**
+
+The dataset consists of three splits (70-15-15): train, val, and test, each containing:
+- A timestamp
+- A 1343-dimensional spectrum corresponding to EUV wavelengths ranging from approximately 6.5 to 33.3 nm, observed at a 1-minute cadence
+- EUV measurements from both flare and quiet sun conditions
+- Input shape: (1, 13, 4096, 4096)
+- Output shape: (1, 1343)
+
+
+### 🚀 Example Usage
+
+For training run the below code
+
+1. **Resnet Models**
+Multiple resnet models as described below have been used to train the baseline. The only change needed to run the baselines in the given command is to change the model name.
+- Resnet18
+- Resnet34
+- Resnet50
+- Resnet101
+- Resnet152
+```
+python train_baseline.py --config_path ./ds_configs/config_resnet_18.yaml --gpu 
+```
+
+```
+torchrun --nnodes=1 --nproc_per_node=1 train_baseline.py --config_path ./ds_configs/config_resnet_18.yaml --gpu
+```
+
+2. **AttentionUNet**
+```
+python train_baseline.py --config_path ./ds_configs/config_attention_unet.yaml --gpu 
+```
+
+```
+torchrun --nnodes=1 --nproc_per_node=1 train_baseline.py --config_path ./ds_configs/config_attention_unet.yaml --gpu
+```
+
+3. **UNet**
+```
+python train_baseline.py --config_path ./ds_configs/config_unet.yaml --gpu 
+```
+
+```
+torchrun --nnodes=1 --nproc_per_node=1 train_baseline.py --config_path ./ds_configs/config_unet.yaml --gpu
+```

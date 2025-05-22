@@ -1,12 +1,15 @@
-import numpy as np
-import pandas as pd
+import os
 import sys
 
+import numpy as np
+import pandas as pd
+import torch
+
 # Append base path.  May need to be modified if the folder structure changes
-sys.path.append("../../downstream_task/downstream-heliofm/HelioFM/")
-from train_spectformer import get_config
-from utils.data import build_scalers
+sys.path.insert(0, "../HelioFM")
 from datasets.helio import HelioNetCDFDataset
+from utils.config import get_config
+from utils.data import build_scalers
 
 
 class WindSpeedDSDataset(HelioNetCDFDataset):
@@ -182,7 +185,8 @@ class WindSpeedDSDataset(HelioNetCDFDataset):
         base_dictionary, metadata = super().__getitem__(idx=idx)
 
         # We now add the flare intensity label
-        base_dictionary["target"] = self.df_valid_indices.iloc[idx]["V"]
+        target = torch.tensor(self.df_valid_indices.iloc[idx]["V"])
+        base_dictionary["target"] = target
         base_dictionary["ds_time"] = self.df_valid_indices.index[idx]
 
         return base_dictionary, metadata

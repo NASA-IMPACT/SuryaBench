@@ -1,15 +1,14 @@
+import sys
+
 import numpy as np
 import pandas as pd
-import sys
-from pathlib import Path
-import xarray as xr
 import torch
+import xarray as xr
 
-sys.path.append("../../HelioFM")
-
-from train_spectformer import get_config
-from utils.data import build_scalers
+sys.path.insert(0, "../HelioFM")
 from datasets.helio import HelioNetCDFDataset
+from utils.config import get_config
+from utils.data import build_scalers
 
 
 class EVEDSDataset(HelioNetCDFDataset):
@@ -99,7 +98,7 @@ class EVEDSDataset(HelioNetCDFDataset):
         )
 
         # Load ds index and find intersection with HelioFM index
-        ds = xr.open_dataset(ds_eve_index_path, engine="netcdf4")
+        ds = xr.open_dataset(ds_eve_index_path)
 
         if ds_time_column.startswith("train"):
             spectra_key = "train_spectra"
@@ -130,8 +129,8 @@ class EVEDSDataset(HelioNetCDFDataset):
 
         # Global min-max normalization
         # Reason: Required to keep relative shape of spectrum unchanged
-        global_min = -9.00  # Corresponds to 1.0e-9
-        global_max = -1.96  # Corresponds to 0.011
+        global_min = -9.00  # np.min(spectra_log)
+        global_max = -1.96  # np.max(spectra_log)
         spectra_norm = (spectra_log - global_min) / (global_max - global_min)
 
         # Store as DataFrame with list of normalized spectra per timestamp

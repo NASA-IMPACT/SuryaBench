@@ -1,0 +1,88 @@
+job_id: resnet18_baseline_channel_13
+data:
+  # Use this to point at the paths of HelioFM data indices
+  train_data_path: /nobackupnfs1/sroy14/processed_data/Helio/csv_files/index_201005_to_201812.csv
+  valid_data_path: /nobackupnfs1/sroy14/processed_data/Helio/csv_files/nas/index_201901_to_201912.csv
+  train_3dmag_data_path : /nobackupnfs1/sroy14/processed_data/Helio/daniel/heliofm_downstream_wsa_train_index_new.csv
+  valid_3dmag_data_path : /nobackupnfs1/sroy14/processed_data/Helio/daniel/heliofm_downstream_wsa_test_index_new.csv
+  root: /nobackupnfs1/sroy14/processed_data/Helio/daniel
+  channels: ['aia94', 'aia131', 'aia171', 'aia193', 'aia211', 'aia304', 'aia335', 'aia1600', 'hmi_bx', 'hmi_by', 'hmi_bz', 'hmi_m', 'hmi_v']
+  time_delta_input_minutes: [0]
+  time_delta_target_minutes: +60
+  # n_input_timestamps: 1 #Optional integer to randomly sample time_delta_input_minutes
+  batch_size: 1
+  num_data_workers: 8
+  prefetch_factor: 1
+  scalers_path: "../../HelioFM/configs/scale_signum_13chan_2011_2014.yaml"
+
+model:
+  model_type: resnet18 # Options: unet, spectformer, latent_space_transformer, persistence, flow
+  # Spectformer options
+  img_size: 4096
+  patch_size: 16
+  in_channels: 13
+  time_embedding:
+    type: linear      # Options: linear, fourier, perceiver
+    n_queries: null   # Integer for perceiver; otherwise null
+    time_dim: 1       # Integer for linear and fourier; otherwise null
+  unet_embed_dim: null
+  unet_blocks: null
+  unet_concat_activations: false # Whether to concatenate activations (UNet) or not (Autoencoder/bottleneck) in the decoder
+  embed_dim: 1024
+  depth: 8
+  spectral_blocks: 4
+  num_heads: 8
+  mlp_ratio: 4.0
+  rpe: false
+  drop_rate: 0.0
+  window_size: 2
+  dp_rank: 4
+  learned_flow: false
+  epochs_to_learn_flow: 0 # Start by training flow model only before freezing
+  init_weights: false
+  checkpoint_layers: []
+metrics:
+  cdelt: 0.6
+  rsun: 976.0
+  limb_radius: 0.9
+  distance_to_sun: 1.0
+
+  train_loss_config:
+    normalized_units:
+      metrics: ['mse:global']
+      weights: [1.0]
+
+  train_metrics_config:
+    active_mask_config:
+      reference_channel_for_active_mask: "aia335"
+    normalized_units:
+      metrics: ["mse:global"]
+
+  validation_metrics_config:
+    normalized_units:
+      metrics: []     
+    natural_units:
+      metrics: []
+optimizer:
+  warm_up_steps: 0 #2000
+  max_epochs: 40
+  learning_rate: 0.001
+  min_lr: 0.000001
+use_latitude_in_learned_flow: false
+# from_checkpoint: <PATH TO BEST CHECKPOINT linembed-input1_0.1>
+checkpoint_path: ./checkpoints/resnet18_baseline_channel_13
+loss_weights: [] #[2.360098744, 6.321392359, 43.75827023, 89.09802699, 64.77035144, 13.11812083, 7.037300083, 0.624048371] # [] or list of weights per channel
+rollout_steps: 0
+num_mask_aia_channels: 0
+drop_hmi_probablity: 0.0
+validate_after_epoch: 1
+wandb_log_train_after: 5 # This should be less than iters_per_epoch_train
+wandb_project: "downstream" # Typical choices: "helio-fm", "spectformer_with_metrics"
+visualization_samples: 3
+save_wt_after_iter: 1000
+path_experiment: checkpoints
+iters_per_epoch_train: 2000
+iters_per_epoch_valid: 200
+iters_grad_accum: 1
+dtype: bfloat16
+parallelism: "ddp" # Valid options: "ddp" and "fsdp"
