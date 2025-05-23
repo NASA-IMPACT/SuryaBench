@@ -143,8 +143,8 @@ class OutConv(nn.Module):
             nn.ReLU(),
             nn.AdaptiveAvgPool2d(128),  # 256 -> 128
             nn.ReLU(),
-            nn.Flatten(start_dim=2),
-            nn.Linear(128 * 128, 4186),
+            nn.Flatten(),
+            nn.Linear(2 * 128 * 128, 2 * 4186),
         )
 
     def forward(self, x):
