@@ -19,7 +19,7 @@ data:
   batch_size: 1
   num_data_workers: 8
   prefetch_factor: null
-  scalers_path: "../../HelioFM/configs/scale_signum_13chan_2011_2014.yaml"
+  scalers_path: "../HelioFM/configs/scale_signum_log_factor1e-02_2011_2020.yaml"
 
 model:
   model_type: attention_unet # Options: unet, spectformer, latent_space_transformer, persistence, flow
