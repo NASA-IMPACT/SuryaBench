@@ -98,7 +98,7 @@ class EVEDSDataset(HelioNetCDFDataset):
         )
 
         # Load ds index and find intersection with HelioFM index
-        ds = xr.open_dataset(ds_eve_index_path)
+        ds = xr.open_dataset(ds_eve_index_path, engine='h5netcdf')
 
         if ds_time_column.startswith("train"):
             spectra_key = "train_spectra"

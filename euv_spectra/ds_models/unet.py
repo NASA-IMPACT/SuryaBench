@@ -128,23 +128,23 @@ class OutConv(nn.Module):
         self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=1)
         self.mpavg = nn.ConstantPad2d(12, 0)
 
-                self.hf_conv1 = nn.Sequential(
+        self.hf_conv1 = nn.Sequential(
             nn.AdaptiveAvgPool2d(2048),  # 4096 -> 2048
             nn.ReLU(),
             nn.Conv2d(
-                in_channels=2, out_channels=2, kernel_size=4, stride=2, padding=1
+                in_channels=1, out_channels=1, kernel_size=4, stride=2, padding=1
             ),  # 2048 -> 1024
             nn.ReLU(),
             nn.AdaptiveAvgPool2d(512),  # 1024 -> 512
             nn.ReLU(),
             nn.Conv2d(
-                in_channels=2, out_channels=2, kernel_size=4, stride=2, padding=1
+                in_channels=1, out_channels=1, kernel_size=4, stride=2, padding=1
             ),  # 512 -> 256
             nn.ReLU(),
             nn.AdaptiveAvgPool2d(128),  # 256 -> 128
             nn.ReLU(),
-            nn.Flatten(start_dim=2),
-            nn.Linear(128 * 128, 1343),
+            nn.Flatten(),
+            nn.Linear(1 * 128 * 128, 1343),
         )
 
     def forward(self, x):

@@ -138,6 +138,7 @@ class StandardScaler(Transformation):
         self._std = None
         self._min = None
         self._max = None
+        self._sl_scale_factor = None
 
     @property
     def mean(self) -> float:
@@ -154,6 +155,10 @@ class StandardScaler(Transformation):
     @property
     def max(self) -> float:
         return self._max
+
+    @property
+    def sl_scale_factor(self) -> float:
+        return self._sl_scale_factor
 
     @property
     def is_fitted(self) -> bool:
@@ -175,6 +180,7 @@ class StandardScaler(Transformation):
         return (data - self.mean) / (self.std + self.epsilon)
 
     def _signum_log_transform(self, data: xr.DataArray):
+        data = data * self.sl_scale_factor
         return np.sign(data) * np.log1p(np.abs(data))
 
     def signum_log_transform(self, data: xr.DataArray):
@@ -204,6 +210,16 @@ class StandardScaler(Transformation):
         else:
             return data * (self.std + self.epsilon) + self.mean
 
+    def inverse_signum_log_transform(self, data):
+        if isinstance(data, torch.Tensor):
+            return (
+                torch.sign(data)
+                * torch.expm1(torch.abs(data))
+                / torch.Tensor([self.sl_scale_factor]).to(data.device)
+            )
+        else:
+            return np.sign(data) * np.expm1(np.abs(data)) / self.sl_scale_factor
+
     def to_dict(self) -> dict:
         return {
             "base": self.__module__,
@@ -214,6 +230,7 @@ class StandardScaler(Transformation):
             "is_fitted": self.is_fitted,
             "min": str(self.min),
             "max": str(self.max),
+            "sl_scale_factor": str(self.sl_scale_factor),
         }
 
     @staticmethod
@@ -224,6 +241,7 @@ class StandardScaler(Transformation):
         out._is_fitted = info["is_fitted"]
         out._min = np.float32(info["min"])
         out._max = np.float32(info["max"])
+        out._sl_scale_factor = np.float32(info["sl_scale_factor"])
         return out
 
     def reset(self):

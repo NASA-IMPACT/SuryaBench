@@ -5,6 +5,35 @@ import xarray as xr
 import pandas as pd
 from torch.utils.data import Dataset
 
+from numba import njit, prange
+
+import hdf5plugin  # Enables LZ4 decompression via h5py - does not interfere with gzip
+
+
+@njit(parallel=True)
+def fast_transform(data, means, stds, sl_scale_factors, epsilons):
+    """
+    implements signum log transform using numba for speed
+        note: this must reside outside the class definition from which it is called
+    """
+    C, H, W = data.shape
+    out = np.empty((C, H, W), dtype=np.float32)
+    for c in prange(C):
+        mean = means[c]
+        std = stds[c]
+        eps = epsilons[c]
+        sl_scale_factor = sl_scale_factors[c]
+        for i in range(H):
+            for j in range(W):
+                val = data[c, i, j]
+                val = val * sl_scale_factor
+                if val >= 0:
+                    val = np.log1p(val)
+                else:
+                    val = -np.log1p(-val)
+                out[c, i, j] = (val - mean) / (std + eps)
+    return out
+
 
 class RandomChannelMaskerTransform:
     def __init__(self, num_channels, num_mask_aia_channels, phase, drop_hmi_probablity):
@@ -166,7 +195,40 @@ class HelioNetCDFDataset(Dataset):
                 forecast_latitude (torch.Tensor): L
             C - Channels, T - Input times, H - Image height, W - Image width, L - Lead time.
         """
+        exception_counter = 0
+        max_exception = 100
 
+        while True:
+            try:
+                sample = self._get_index_data(idx)
+            except OSError as e:
+                exception_counter += 1
+                if exception_counter >= max_exception:
+                    raise e
+                
+                reference_timestep = self.valid_indices[idx]
+                error_msg = f"Unable to read data on attempt {exception_counter}. Index {idx}, timestamp {reference_timestep}.\n"
+                with open("read_file_errors.log", "a") as fp:
+                    fp.write(error_msg)
+
+                idx = (idx + 1) % self.__len__()
+            else:
+                return sample
+
+    def _get_index_data(self, idx: int) -> dict:
+        """
+        Args:
+            idx: Index of sample to load. (Pytorch standard.)
+        Returns:
+            Dictionary with following keys. The values are tensors with shape as follows:
+                ts (torch.Tensor):                C, T, H, W
+                time_delta_input (torch.Tensor):  T
+                input_latitude (torch.Tensor):    T
+                forecast (torch.Tensor):          C, L, H, W
+                lead_time_delta (torch.Tensor):   L
+                forecast_latitude (torch.Tensor): L
+            C - Channels, T - Input times, H - Image height, W - Image width, L - Lead time.
+        """
         # start_time = time.time()
 
         time_deltas = np.array(
@@ -180,6 +242,7 @@ class HelioNetCDFDataset(Dataset):
         )
         reference_timestep = self.valid_indices[idx]
         required_timesteps = reference_timestep + time_deltas
+
         sequence_data = [
             self.transform_data(
                 self.load_nc_data(
@@ -263,7 +326,7 @@ class HelioNetCDFDataset(Dataset):
             Numpy array of shape (C, H, W).
         """
         with xr.open_dataset(
-            filepath, chunks=None, cache=False
+            filepath, engine="h5netcdf", chunks=None, cache=False
         ) as ds:
             data = ds[channels].to_array().values
         return data
@@ -276,8 +339,18 @@ class HelioNetCDFDataset(Dataset):
             data: Numpy array of shape (C, H, W)
         Returns:
             Tensor of shape (C, H, W). Data type float32.
+        Uses:
+                numba to speed up transform
+                tvk-srm-heliofm  environment cloned from srm-heliofm with numba added
+                tvk_dgx_slurm.sh  shell script modified to use new environment and new jobname
+                train_spectformer_dgx.yaml new jobname
         """
-        for idx, channel in enumerate(self.channels):
-            data[idx] = self.scalers[channel].signum_log_transform(data[idx])
-
-        return data.astype(np.float32)
+        assert data.ndim == 3
+        means = np.array([self.scalers[ch].mean for ch in self.channels])
+        stds = np.array([self.scalers[ch].std for ch in self.channels])
+        epsilons = np.array([self.scalers[ch].epsilon for ch in self.channels])
+        sl_scale_factors = np.array(
+            [self.scalers[ch].sl_scale_factor for ch in self.channels]
+        )
+        result_np = fast_transform(data, means, stds, sl_scale_factors, epsilons)
+        return result_np
