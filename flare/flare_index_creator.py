@@ -131,11 +131,14 @@ def rolling_window(
         else:
             target_cumulative = 0
 
-        result.append([window_start, ins, cumulative_index, target, target_cumulative])
+        # result.append([window_start, ins, cumulative_index, target, target_cumulative])
+        result.append([window_start, target, target_cumulative])
 
         window_start += timedelta(**cadence)
 
-    cols = ["timestep", "max_goes_class", "cumulative_index", "label_max", "label_cum"]
+    # cols = ["timestep", "max_goes_class", "cumulative_index", "label_max", "label_cum"]
+    cols = ["timestep", "label_max", "label_cum"]
+
     df = pd.DataFrame(result, columns=cols)
     df["timestep"] = df["timestep"].dt.strftime("%Y-%m-%d %H:%M:%S")
 
@@ -164,8 +167,14 @@ def rolling_window(
 # Creating time-segmented 4 tri-monthly partitions
 def split_dataset(df: pd.DataFrame, savepath: str = "/"):
     """
-    Split the dataset into 4 seasonal (tri-monthly) partitions
+    Split the dataset into 4 different subsets
     and save each as CSV.
+
+    First buffer: Weeks 1-2 of each year from 2010 to 2019
+    validation: Weeks 3-4 of each year from 2010 to 2019
+    Second buffer: Weeks 5-6 of each year from 2010 to 2019
+    Training: Weeks 7~52 of each year from 2010 to 2019
+    Testing: Weeks 1~52 of each year from Jan 1, 2020 to Dec 31st, 2024
 
     Parameters:
     -----------
@@ -178,21 +187,42 @@ def split_dataset(df: pd.DataFrame, savepath: str = "/"):
     --------
     None
     """
+    # Ensure datetime conversion
+    df = df.copy()
+    df["timestep"] = pd.to_datetime(df["timestep"], errors="coerce")
 
-    df["timestep"] = pd.to_datetime(df["timestep"], format="%Y-%m-%d %H:%M:%S")
+    # Extract ISO calendar fields
+    iso = df["timestep"].dt.isocalendar()
 
-    for i in range(1, 13, 3):
+    # Define year masks
+    train_val_years = df["timestep"].dt.year.between(2010, 2019)
+    test_years = df["timestep"].dt.year.between(2020, 2024)
 
-        condition = (df["timestep"].dt.month >= i) & (df["timestep"].dt.month <= i + 2)
-        partition = df.loc[condition, :]
-        print(partition["label_max"].value_counts())
-        print(partition["label_cum"].value_counts())
+    # Define splits
+    splits = {
+        "first_buffer": df[train_val_years & iso.week.between(1, 2)],
+        "validation": df[train_val_years & iso.week.between(3, 4)],
+        "second_buffer": df[train_val_years & iso.week.between(5, 6)],
+        "training": df[train_val_years & (iso.week >= 7)],
+        "testing": df[test_years & iso.week.between(1, 52)],
+    }
 
-        # Dumping the dataframe into CSV
-        # with label as Date and goes_class as intensity
-        file_path = os.path.join(savepath, f"flare_cls_p{i//3 + 1}_1h.csv")
-        print(f"File is saved, {file_path}")
-        partition.to_csv(file_path, index=False)
+    # Create leaky validation (combination of both buffers)
+    splits["leaky_validation"] = pd.concat(
+        [splits["first_buffer"], splits["second_buffer"]],
+        axis=0
+    ).sort_values("timestep")
+
+    # Save to CSV if requested
+    if savepath:
+        os.makedirs(savepath, exist_ok=True)
+        for name, subset in splits.items():
+            fname = f"flare_cls_{name}_1h.csv"
+            path = os.path.join(savepath, fname)
+            subset.to_csv(path, index=False)
+            print(f"Saved {name} ({len(subset)} rows) to {path}")
+
+    return splits
 
 
 if __name__ == "__main__":
