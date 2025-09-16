@@ -6,6 +6,7 @@ This folder contains scripts for downloading the solar wind data and splits them
 2. If you want to just run the scripts, you must run `download_sw_data.py` for downloading the solar wind data.
 3. `remove_icme_omni.py` removes the ICMEs from a list compiled by Christian Moestl, and provide by Dinesh Hegde. This ensures we have only background solar wind, and no ICMEs.
 4. `split_omni_icme.py` splits the dataset into train-val-test sets. These sets are defined in the paper. Run this script as `python3 split_omni_icme.py --input csv_files/omni_icme_removed_solar_wind.csv --out-dir csv_files/`
+5. `plot_omni_csvs.py` plots the time series of datasets for a visual inspection. Run this script as `python3 plot_omni_csvs.py --input-dir csv_files --out-dir plots --date-col Epoch`
 
 ## Solar Wind Prediction
 
@@ -15,11 +16,11 @@ The dataset is split into train-val-leaky val-test sets. The number of samples i
 
 | Split   | Rows   |
 |---------:|-------:|
-| train   | 72,627 |
-| val     | 3,119  |
-| buffer  | 6,490  |
-| test    | 39,998 |
-| **Total** | **122,234** |
+| train   | 70832 |
+| val     | 2783  |
+| leaky validation  | 5888  |
+| test    | 39975 |
+| **Total** | **119478** |
 
 ---
 
@@ -29,7 +30,7 @@ The dataset is split into train-val-leaky val-test sets. The number of samples i
 
 The dataset it stored as `.csv` files. Each sample in the dataset corresponds to a solar wind and magnetic field measurement at L1.
 - Input shape: (1, 13, 4096, 4096)
-- Temporal coverage of the dataset is `2010-05-01` to `2023-12-31`
+- Temporal coverage of the dataset is `2010-05-01` to `2024-12-31`
 - 5 physical quantities: V, Bx(GSE), By(GSM), Bz(GSM), Number Density (N)
 - Input timestamps: (120748,)
 - cadence: Hourly
