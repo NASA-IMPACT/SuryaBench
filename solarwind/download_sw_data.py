@@ -1,6 +1,7 @@
 """
-Download solar wind data using sunpy.
-The arguments are all given default values to generate the solar wind dataset in SuryaBench.
+    Author: Vishal Upendran [uvishal1995@gmail.com]
+    Download solar wind data using sunpy.
+    The arguments are all given default values to generate the solar wind dataset in SuryaBench.
 """
 
 import os
