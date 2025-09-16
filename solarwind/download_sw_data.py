@@ -43,8 +43,8 @@ def pull_solarwind(
 
 
 def main():
-    T_start = "2010/01/01"
-    T_end = "2023/12/31"
+    T_start = '2010-01-01T00:00:00'
+    T_end = '2024-12-31T23:59:59'
     ID_dataset = "OMNI2_H0_MRG1HR"
     save_dir = "../data/solar_wind_data/"
     if not os.path.isdir(save_dir):
