@@ -4,11 +4,22 @@ This folder contains scripts for downloading the solar wind data and splits them
 
 1. First step is to download the solar wind data. For this, use data_process/download_sw_data.py. This needs the exact keyword variable by selecting OMNI from: [https://cdaweb.gsfc.nasa.gov/index.html](https://cdaweb.gsfc.nasa.gov/index.html). Be sure to select the right variables to get the correct data.
 2. If you want to just run the scripts, you must run `download_sw_data.py` for downloading the solar wind data.
-3. `split_trainValTest.py` splits the dataset into train-val-test sets. These sets are defined in the paper.
+3. `remove_icme_omni.py` removes the ICMEs from a list compiled by Christian Moestl, and provide by Dinesh Hegde. This ensures we have only background solar wind, and no ICMEs.
+4. `split_omni_icme.py` splits the dataset into train-val-test sets. These sets are defined in the paper. Run this script as `python3 split_omni_icme.py --input csv_files/omni_icme_removed_solar_wind.csv --out-dir csv_files/`
 
 ## Solar Wind Prediction
 
 This contains code and model implementations for predicting the solar wind velocity. includes Speed, ("V"), Bx (GSE), By (GSM), Bz (GSM) and number density (N). For this task, we only consider the wind speed from the dataset.
+
+The dataset is split into train-val-leaky val-test sets. The number of samples in the dataset is:
+
+| Split   | Rows   |
+|---------:|-------:|
+| train   | 72,627 |
+| val     | 3,119  |
+| buffer  | 6,490  |
+| test    | 39,998 |
+| **Total** | **122,234** |
 
 ---
 
@@ -16,7 +27,7 @@ This contains code and model implementations for predicting the solar wind veloc
 
 **Dataset can be found at [NASA-IMPACT HuggingFace Repository](https://huggingface.co/datasets/nasa-impact/Surya-bench-solarwind)**
 
-The dataset it stored as `.csv` files. Each sample in the dataset corresponds to a tracked active region and is structured as follows:
+The dataset it stored as `.csv` files. Each sample in the dataset corresponds to a solar wind and magnetic field measurement at L1.
 - Input shape: (1, 13, 4096, 4096)
 - Temporal coverage of the dataset is `2010-05-01` to `2023-12-31`
 - 5 physical quantities: V, Bx(GSE), By(GSM), Bz(GSM), Number Density (N)
@@ -24,7 +35,6 @@ The dataset it stored as `.csv` files. Each sample in the dataset corresponds to
 - cadence: Hourly
 - Output shape: (1)
 - Output prediction:  (single value per prediction)
-
 
 ### 🚀 Example Usage
 

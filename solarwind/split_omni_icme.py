@@ -1,19 +1,21 @@
 #!/usr/bin/env python3
 """
-split_omni_icme.py
+    Author: Vishal Upendran[uvishal1995@gmail.com]
 
-Create train/val/buffer/test splits from omni_icme_removed_solar_wind.csv
-using the Surya-style buffered, non-chronological temporal sampling:
+    Create train/val/buffer/test splits from omni_icme_removed_solar_wind.csv
+    using the Surya-style buffered, non-chronological temporal sampling:
 
-For years 2010-2019 (inclusive), within each year split by day-of-year index (0-based):
- - days [0:14)   -> buffer
- - days [14:28)  -> validation
- - days [28:42)  -> buffer
- - days [42:]     -> training
+    For years 2010-2019 (inclusive), within each year split by day-of-year index (0-based):
+    - days [0:14)   -> buffer
+    - days [14:28)  -> validation
+    - days [28:42)  -> buffer
+    - days [42:]     -> training
 
-For years 2020-2024 (inclusive): all days -> testing
+    For years 2020-2024 (inclusive): all days -> testing
 
-Outputs are CSV files written to the output directory.
+    Outputs are CSV files written to the output directory.
+    For a dry run, perform: `python3 solarwind/split_omni_icme.py --dry-run`
+    For the correct run and splitting, run: `python3 split_omni_icme.py --input csv_files/omni_icme_removed_solar_wind.csv --out-dir csv_files/`
 """
 from __future__ import annotations
 
