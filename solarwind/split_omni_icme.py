@@ -36,30 +36,6 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--dry-run", action="store_true", help="Don't write files; only report counts")
     return p.parse_args()
 
-
-COMMON_DATE_COLS = ["Epoch"]
-
-
-def find_date_column(df: pd.DataFrame, hint: str | None = None) -> str:
-    if hint and hint in df.columns:
-        return hint
-    for c in COMMON_DATE_COLS:
-        if c in df.columns:
-            return c
-    # fallback: try to detect by dtype
-    for c in df.columns:
-        if pd.api.types.is_datetime64_any_dtype(df[c]):
-            return c
-    # try parsing first column names
-    for c in df.columns:
-        try:
-            pd.to_datetime(df[c].iloc[0])
-            return c
-        except Exception:
-            continue
-    raise ValueError("Could not find or parse a date column. Please pass --date-col with the column name.")
-
-
 def split_dataframe(df: pd.DataFrame, date_col: str):
     # Ensure datetime
     df = df.copy()
@@ -67,6 +43,16 @@ def split_dataframe(df: pd.DataFrame, date_col: str):
     if df[date_col].isna().any():
         nbad = int(df[date_col].isna().sum())
         raise ValueError(f"{nbad} rows could not be parsed as datetimes in column '{date_col}'")
+
+    # filter to requested overall date range: 2010-05-01 .. 2024-12-31
+    min_dt = pd.to_datetime("2010-05-01")
+    max_dt = pd.to_datetime("2024-12-31")
+    before_count = len(df)
+    df = df[(df[date_col] >= min_dt) & (df[date_col] <= max_dt)].reset_index(drop=True)
+    after_count = len(df)
+    dropped = before_count - after_count
+    if dropped > 0:
+        print(f"Filtered data to {min_dt.date()}..{max_dt.date()}: dropped {dropped} rows ({before_count} -> {after_count})")
 
     # add helpers
     df["year"] = df[date_col].dt.year
@@ -137,7 +123,7 @@ def main():
         raise FileNotFoundError(f"Input file not found: {inp}")
 
     df = pd.read_csv(inp)
-    date_col = find_date_column(df, args.date_col)
+    date_col = "Epoch"
 
     train_df, val_df, buffer_df, test_df = split_dataframe(df, date_col)
 
