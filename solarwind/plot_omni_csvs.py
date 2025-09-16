@@ -29,36 +29,10 @@ def parse_args():
     return p.parse_args()
 
 
-COMMON_DATE_COLS = ["Epoch", "date", "datetime", "time", "timestamp", "Date"]
-
-
-def find_date_column(df: pd.DataFrame, hint: str | None = None) -> str | None:
-    if hint and hint in df.columns:
-        return hint
-    for c in COMMON_DATE_COLS:
-        if c in df.columns:
-            return c
-    for c in df.columns:
-        if pd.api.types.is_datetime64_any_dtype(df[c]):
-            return c
-    # try parse
-    for c in df.columns:
-        try:
-            pd.to_datetime(df[c].iloc[0])
-            return c
-        except Exception:
-            continue
-    return None
-
-
 def plot_file(path: Path, out_dir: Path, date_col_hint: str | None = None, sample: int = 1):
     df = pd.read_csv(path)
-    date_col = find_date_column(df, date_col_hint)
-    if date_col is None:
-        print(f"[skip] could not find date column for {path.name}")
-        return
+    date_col = "Epoch"
     df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
-    df = df.sort_values(date_col)
     numeric = df.select_dtypes(include=[np.number]).columns.tolist()
     if not numeric:
         print(f"[skip] no numeric columns in {path.name}")
