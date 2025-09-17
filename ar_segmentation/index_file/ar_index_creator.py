@@ -14,10 +14,20 @@ import numpy as np
 import pandas as pd
 
 
+def parse_filename(file_path: list):
+    file_name = os.path.basename(file_path)
+    
+    # Basic validation to ensure filename has at least 6 characters for year+month
+    if len(file_name) < 6 or not file_name[:6].isdigit():
+        raise ValueError(f"Filename '{file_name}' must start with YYYYMM")
+    
+    year, month = file_name[:4], file_name[4:6]
+    return os.path.join("assets", year, month, file_name)
+
+
 def index_create(
     mask_path: str,
     input_dir: str,
-    sdo_index: str,
     file_ext: str,
     start: str,
     stop: str,
@@ -46,7 +56,7 @@ def index_create(
     # Create dataframe from file paths
     files = glob.glob(mask_path + "*/*/*." + file_ext)
     df = pd.DataFrame()
-    df["file_path"] = files
+    df["file_path"] = [parse_filename(file) for file in files]
     df["timestep"] = df["file_path"].str.extract(r"(\d{8}_\d{4})")
     df["timestep"] = pd.to_datetime(df["timestep"], format="%Y%m%d_%H%M%S")
     df["present"] = np.ones((len(df),), dtype=int)
@@ -55,12 +65,6 @@ def index_create(
     path_fmt = "%Y/%m/hmi.m_720s.%Y%m%d_%H0000_TAI.1.magnetogram.h5"
     path_template = os.path.join(input_dir, path_fmt)
     df["input_path"] = df["timestep"].dt.strftime(path_template)
-
-    # Read valid input index file
-    df_input = pd.read_csv(sdo_index)
-    df_input = df_input.loc[df_input["present"] == 1, :]
-    fmt = "%Y-%m-%d %H:%M:%S"
-    df_input["timestep"] = pd.to_datetime(df_input["timestep"], format=fmt)
 
     # Create dataframe for all times between start and stop
     df_time = pd.DataFrame()
@@ -73,15 +77,9 @@ def index_create(
         df, how="left", left_on=merge_cols[0], right_on=merge_cols[1]
     )
     df_all.loc[df_all["present"].isnull(), "present"] = 0
-    df_all = df_all.loc[df_all["present"] == 1, :]
-
-    # Merge with input index file
-    df_all = df_all.merge(
-        df_input, how="inner", left_on="timestep", right_on="timestep"
-    )
-    df_all = df_all[["timestep", "file_path", "present_x"]]
-    df_all.rename(columns={"present_x": "present"}, inplace=True)
-
+    # df_all = df_all.loc[df_all["present"] == 1, :]
+    df_all = df_all[["timestep", "file_path", "present"]]
+    
     # Save index files
     df_all.to_csv(savepath + "ar_mask_index.csv", index=False)
     split_dataset(df_all, savepath=savepath)
@@ -170,8 +168,7 @@ if __name__ == "__main__":
     desc = "Create AR segmentation index files"
     parser = argparse.ArgumentParser(description=desc)
 
-    default_mask_path = "./ar_detection/"
-    default_sdo_idex_path = "./SuryaBench/ar_segmentation/index_file/index_all.csv"
+    default_mask_path = "./aripod/out/pil/"
     default_save_path = "./SuryaBench/ar_segmentation/"
 
     parser.add_argument(
@@ -179,12 +176,6 @@ if __name__ == "__main__":
         type=str,
         default=default_mask_path,
         help="Path to AR mask files",
-    )
-    parser.add_argument(
-        "--sdo_index_path",
-        type=str,
-        default=default_sdo_idex_path,
-        help="Path to sdo data index file",
     )
     parser.add_argument(
         "--save_path",
@@ -206,11 +197,9 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    # data_dir = "/nobackupp17/jhong15/project/aripod/out/pil"
     index_create(
         mask_path=args.file_path,
         input_dir=default_mask_path,
-        sdo_index=args.sdo_index_path,
         file_ext="h5",
         start=args.start,
         stop=args.stop,
