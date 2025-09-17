@@ -17,6 +17,7 @@ import pandas as pd
 def index_create(
     mask_path: str,
     input_dir: str,
+    sdo_index: str,
     file_ext: str,
     start: str,
     stop: str,
@@ -46,7 +47,7 @@ def index_create(
     files = glob.glob(mask_path + "*/*/*." + file_ext)
     df = pd.DataFrame()
     df["file_path"] = files
-    df["timestep"] = df["file_path"].str.extract(r"(\d{8}_\d{6})")
+    df["timestep"] = df["file_path"].str.extract(r"(\d{8}_\d{4})")
     df["timestep"] = pd.to_datetime(df["timestep"], format="%Y%m%d_%H%M%S")
     df["present"] = np.ones((len(df),), dtype=int)
 
@@ -56,7 +57,7 @@ def index_create(
     df["input_path"] = df["timestep"].dt.strftime(path_template)
 
     # Read valid input index file
-    df_input = pd.read_csv("./index_all.csv")
+    df_input = pd.read_csv(sdo_index)
     df_input = df_input.loc[df_input["present"] == 1, :]
     fmt = "%Y-%m-%d %H:%M:%S"
     df_input["timestep"] = pd.to_datetime(df_input["timestep"], format=fmt)
@@ -83,40 +84,107 @@ def index_create(
 
     # Save index files
     df_all.to_csv(savepath + "ar_mask_index.csv", index=False)
-    split_dataset_by_year(df_all, savepath=savepath)
+    split_dataset(df_all, savepath=savepath)
 
 
-def split_dataset_by_year(df, savepath="/"):
-    """Split dataset into yearly files.
-
-    Parameters
-    ----------
-    df : pandas.DataFrame
-        DataFrame containing AR mask data.
-    savepath : str, optional
-        Path to save the yearly files, by default "/".
+# Creating time-segmented 4 tri-monthly partitions
+def split_dataset(df: pd.DataFrame, savepath: str = "/"):
     """
-    fmt = "%Y-%m-%d %H:%M:%S"
-    df["timestep"] = pd.to_datetime(df["timestep"], format=fmt)
+    Split the dataset into 4 different subsets
+    and save each as CSV.
 
-    for year, group in df.groupby(df["timestep"].dt.year):
-        file_path = os.path.join(savepath, f"ar_{year}.csv")
-        group.to_csv(file_path, index=False)
-        print(f"Saved: {file_path}")
+    First buffer: Weeks 1-2 of each year from 2010 to 2019
+    validation: Weeks 3-4 of each year from 2010 to 2019
+    Second buffer: Weeks 5-6 of each year from 2010 to 2019
+    Training: Weeks 7~52 of each year from 2010 to 2019
+    Testing: Weeks 1~52 of each year from Jan 1, 2020 to Dec 31st, 2024
+
+    Parameters:
+    -----------
+    df : pd.DataFrame
+        Dataset with 'timestep' and label columns.
+    savepath : str
+        Path to save the partitioned CSV files.
+
+    Returns:
+    --------
+    None
+    """
+    # Ensure datetime conversion
+    df = df.copy()
+    df["timestep"] = pd.to_datetime(df["timestep"], errors="coerce")
+
+    # Extract ISO calendar fields
+    iso = df["timestep"].dt.isocalendar()
+
+    # Define year masks
+    train_val_years = df["timestep"].dt.year.between(2010, 2019)
+    test_years = df["timestep"].dt.year.between(2020, 2024)
+
+    # Define splits
+    splits = {
+        "first_buffer": df[train_val_years & iso.week.between(1, 2)],
+        "validation": df[train_val_years & iso.week.between(3, 4)],
+        "second_buffer": df[train_val_years & iso.week.between(5, 6)],
+        "training": df[train_val_years & (iso.week >= 7)],
+        "testing": df[test_years & iso.week.between(1, 52)],
+    }
+
+    # Create leaky validation (combination of both buffers)
+    splits["leaky_validation"] = pd.concat(
+        [splits["first_buffer"], splits["second_buffer"]],
+        axis=0
+    ).sort_values("timestep")
+
+    # Save to CSV if requested
+    if savepath:
+        os.makedirs(savepath, exist_ok=True)
+        for name, subset in splits.items():
+            fname = f"ar_binary_mask_index_{name}_1h.csv"
+            path = os.path.join(savepath, fname)
+            subset.to_csv(path, index=False)
+            print(f"Saved {name} ({len(subset)} rows) to {path}")
+
+    return splits
+
+# def split_dataset_by_year(df, savepath="/"):
+#     """Split dataset into yearly files.
+
+#     Parameters
+#     ----------
+#     df : pandas.DataFrame
+#         DataFrame containing AR mask data.
+#     savepath : str, optional
+#         Path to save the yearly files, by default "/".
+#     """
+#     fmt = "%Y-%m-%d %H:%M:%S"
+#     df["timestep"] = pd.to_datetime(df["timestep"], format=fmt)
+
+#     for year, group in df.groupby(df["timestep"].dt.year):
+#         file_path = os.path.join(savepath, f"ar_{year}.csv")
+#         group.to_csv(file_path, index=False)
+#         print(f"Saved: {file_path}")
 
 
 if __name__ == "__main__":
     desc = "Create AR segmentation index files"
     parser = argparse.ArgumentParser(description=desc)
 
-    default_mask_path = "/home/jh/2python_pr/aripod/out/ar_binary_masks/pil/"
-    default_save_path = "./downstream_apps/segment_yang/ds_data/"
+    default_mask_path = "/nobackupp17/jhong15/project/aripod/out/pil/"
+    default_sdo_idex_path = "/nobackupp17/jhong15/project/SuryaBench/ar_segmentation/index_file/index_all.csv"
+    default_save_path = "/nobackupp17/jhong15/project/SuryaBench/ar_segmentation/"
 
     parser.add_argument(
         "--file_path",
         type=str,
         default=default_mask_path,
         help="Path to AR mask files",
+    )
+    parser.add_argument(
+        "--sdo_index_path",
+        type=str,
+        default=default_sdo_idex_path,
+        help="Path to sdo data index file",
     )
     parser.add_argument(
         "--save_path",
@@ -138,10 +206,11 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    data_dir = "/nobackupnfs1/sroy14/processed_data/Helio/ar_detection/"
+    # data_dir = "/nobackupp17/jhong15/project/aripod/out/pil"
     index_create(
         mask_path=args.file_path,
-        input_dir=data_dir,
+        input_dir=default_mask_path,
+        sdo_index=args.sdo_index_path,
         file_ext="h5",
         start=args.start,
         stop=args.stop,
