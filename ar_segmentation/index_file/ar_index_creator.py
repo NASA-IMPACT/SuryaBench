@@ -170,9 +170,9 @@ if __name__ == "__main__":
     desc = "Create AR segmentation index files"
     parser = argparse.ArgumentParser(description=desc)
 
-    default_mask_path = "/nobackupp17/jhong15/project/aripod/out/pil/"
-    default_sdo_idex_path = "/nobackupp17/jhong15/project/SuryaBench/ar_segmentation/index_file/index_all.csv"
-    default_save_path = "/nobackupp17/jhong15/project/SuryaBench/ar_segmentation/"
+    default_mask_path = "./ar_detection/"
+    default_sdo_idex_path = "./SuryaBench/ar_segmentation/index_file/index_all.csv"
+    default_save_path = "./SuryaBench/ar_segmentation/"
 
     parser.add_argument(
         "--file_path",
