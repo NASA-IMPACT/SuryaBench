@@ -28,6 +28,8 @@ The dataset is split into train-val-leaky val-test sets. The number of samples i
 
 **Dataset can be found at [NASA-IMPACT HuggingFace Repository](https://huggingface.co/datasets/nasa-impact/Surya-bench-solarwind)**
 
+To download the dataset, you can run `huggingface-cli download nasa-ibm-ai4science/Surya-bench-solarwind --repo-type dataset --local-dir csv_files`.
+
 The dataset it stored as `.csv` files. Each sample in the dataset corresponds to a solar wind and magnetic field measurement at L1.
 - Input shape: (1, 13, 4096, 4096)
 - Temporal coverage of the dataset is `2010-05-01` to `2024-12-31`
