@@ -145,25 +145,6 @@ def split_dataset(df: pd.DataFrame, savepath: str = "/"):
 
     return splits
 
-# def split_dataset_by_year(df, savepath="/"):
-#     """Split dataset into yearly files.
-
-#     Parameters
-#     ----------
-#     df : pandas.DataFrame
-#         DataFrame containing AR mask data.
-#     savepath : str, optional
-#         Path to save the yearly files, by default "/".
-#     """
-#     fmt = "%Y-%m-%d %H:%M:%S"
-#     df["timestep"] = pd.to_datetime(df["timestep"], format=fmt)
-
-#     for year, group in df.groupby(df["timestep"].dt.year):
-#         file_path = os.path.join(savepath, f"ar_{year}.csv")
-#         group.to_csv(file_path, index=False)
-#         print(f"Saved: {file_path}")
-
-
 if __name__ == "__main__":
     desc = "Create AR segmentation index files"
     parser = argparse.ArgumentParser(description=desc)
