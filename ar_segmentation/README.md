@@ -85,3 +85,10 @@ You can run the full pipeline using the provided script:
 ```bash
 python ./index_file/ar_index_creator.py
 ```
+
+### 5. Download and Train with Surya AR Segmentation Dataset
+- Download the processed data from huggingface: 
+```
+huggingface-cli download nasa-ibm-ai4science/surya-bench-ar-segmentation --repo-type dataset --local-dir csv_files
+```
+- A link to train model using Surya/Unet https://github.com/NASA-IMPACT/Surya/tree/main/downstream_examples/ar_segmentation

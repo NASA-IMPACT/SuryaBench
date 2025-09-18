@@ -40,3 +40,10 @@ Install dependencies:
 ```bash
 pip install pandas numpy
 ```
+
+### Download and Train with Surya AR Flare Dataset
+- Download the processed data from huggingface: 
+```
+huggingface-cli download nasa-ibm-ai4science/surya-bench-flare-forecasting --repo-type dataset --local-dir csv_files
+```
+- A link to train model using Surya/Unet https://github.com/NASA-IMPACT/Surya/tree/main/downstream_examples/solar_flare_forcasting
