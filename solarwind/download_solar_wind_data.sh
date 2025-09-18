@@ -16,8 +16,11 @@ pip install sunpy[all] numpy matplotlib astropy pandas
 echo "Downloading solar wind data"
 python download_sw_data.py
 
+echo "Remove ICME data"
+python remove_icme_omni.py
+
 echo "Splitting solar wind data into train-val-test"
-python split_trainValTest.py
+python split_omni_icme.py
 
 deactivate
 rm -rf "$ENV_DIR"
