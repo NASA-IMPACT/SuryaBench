@@ -111,21 +111,19 @@ def split_dataset(df: pd.DataFrame, savepath: str = "/"):
     # Ensure datetime conversion
     df = df.copy()
     df["timestep"] = pd.to_datetime(df["timestep"], errors="coerce")
-
-    # Extract ISO calendar fields
-    iso = df["timestep"].dt.isocalendar()
+    df['day_of_year'] = df['timestep'].dt.dayofyear - 1
 
     # Define year masks
     train_val_years = df["timestep"].dt.year.between(2010, 2019)
     test_years = df["timestep"].dt.year.between(2020, 2024)
-
+    
     # Define splits
     splits = {
-        "first_buffer": df[train_val_years & iso.week.between(1, 2)],
-        "validation": df[train_val_years & iso.week.between(3, 4)],
-        "second_buffer": df[train_val_years & iso.week.between(5, 6)],
-        "training": df[train_val_years & (iso.week >= 7)],
-        "testing": df[test_years & iso.week.between(1, 52)],
+        "first_buffer": df[train_val_years & df['day_of_year'].between(0, 13)],    # days 0–13 → weeks 1–2
+        "validation": df[train_val_years & df['day_of_year'].between(14, 27)],    # days 14–27 → weeks 3–4
+        "second_buffer": df[train_val_years & df['day_of_year'].between(28, 41)], # days 28–41 → weeks 5–6
+        "training": df[train_val_years & (df['day_of_year'] >= 42)],             # day 42 → week 7 onwards
+        "testing": df[test_years]                                                # all days in 2020–2024
     }
 
     # Create leaky validation (combination of both buffers)
@@ -140,17 +138,18 @@ def split_dataset(df: pd.DataFrame, savepath: str = "/"):
         for name, subset in splits.items():
             fname = f"ar_binary_mask_index_{name}_1h.csv"
             path = os.path.join(savepath, fname)
-            subset.to_csv(path, index=False)
+            subset[["timestep", "file_path", "present"]].to_csv(path, index=False)
             print(f"Saved {name} ({len(subset)} rows) to {path}")
 
     return splits
+
 
 if __name__ == "__main__":
     desc = "Create AR segmentation index files"
     parser = argparse.ArgumentParser(description=desc)
 
-    default_mask_path = "./aripod/out/pil/"
-    default_save_path = "./SuryaBench/ar_segmentation/"
+    default_mask_path = "/nobackupp17/jhong15/project/aripod/out/pil/"
+    default_save_path = "/nobackupp17/jhong15/project/SuryaBench/ar_segmentation/"
 
     parser.add_argument(
         "--file_path",
