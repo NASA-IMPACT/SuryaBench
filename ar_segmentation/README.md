@@ -25,8 +25,8 @@ The following files need to be modified based on your environment and data locat
 - `./dataloader/ar.py`  
   example of dataloader using our binary maps and input data files (multi-channel 4096x4096 rasters)
 
-
-SuryaBench/  
+```bash
+ar_segmentation/  
 ├── main.cpp               # C++ code to generate binary maps  
 ├── config.yaml            # Configuration file (YAML format)  
 ├── dataloader/
@@ -42,6 +42,7 @@ SuryaBench/
 ├── docker/  
 │   └── dockerfile         # Docker environment setup  
 └── CMakeLists.txt         # Build system config  
+```
 
 ## Features
 - Creates solar AR segmentation maps from magnetogram rasters. Maps represent ARs with polarity inversion lines. 

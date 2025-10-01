@@ -5,11 +5,12 @@
 This Python script generates flaring activity labels using a 24h rolling prediction window. The output includes binary labels based on both the **maximum flare class** and **cumulative flare intensity** within a given time window.
 
 ## Project Structure
-
-- `flare_catalog_2010-2024.csv` – Input CSV file containing flare data  
-- `flare_index_creator.py` – Main script for generating flare labels  
-- `flare.py` – (Dataloader) Loads 4096×4096 input raster images and corresponding flare labels
-
+```bash
+flare/
+├── `flare_catalog_2010-2024.csv` – Input CSV file containing flare data  
+├── `flare_index_creator.py` – Main script for generating flare labels  
+└── `flare.py` – (Dataloader) Loads 4096×4096 input raster images and corresponding flare labels
+```
 *If you're interested in how the `flare_catalog_2010-2024.csv` file was created, please visit the repository [here](https://bitbucket.org/gsudmlab/flare_list_creator/src/main/).*
 
 
@@ -48,3 +49,8 @@ pip install pandas numpy
 hf download nasa-ibm-ai4science/surya-bench-flare-forecasting --repo-type dataset --local-dir surya_flare_forecasting
 ```
 - A link to train model using Surya/Unet https://github.com/NASA-IMPACT/Surya/tree/main/downstream_examples/solar_flare_forcasting
+
+## Contact
+Jinsu Hong [jhong36@gsu.edu]
+Kang Yang [kyang30@student.gsu.edu]
+Berkay Aydin [baydin2@gsu.edu]
