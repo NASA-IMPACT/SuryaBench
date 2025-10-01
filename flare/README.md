@@ -1,7 +1,8 @@
-# Solar Flare Label Generator Using a Rolling Window
+#  Full-disk Solar Flare Forecasting Dataset Generator
 
+## Description 
 
-This Python script generates labeled solar flare time-series data using a rolling window approach. The output includes binary labels based on both the **maximum flare class** and **cumulative flare intensity** within a given time window.
+This Python script generates flaring activity labels using a 24h rolling prediction window. The output includes binary labels based on both the **maximum flare class** and **cumulative flare intensity** within a given time window.
 
 ## Project Structure
 
@@ -19,7 +20,7 @@ This Python script generates labeled solar flare time-series data using a rollin
 - Generates binary labels based on:
   - Maximum flare class in each window
   - Cumulative flare sub-class values in each window
-- Partitions results into 4 tri-monthly datasets
+- Creates temporally non-overlapping, non-chronological splits for training, validation, and testing
 - Optionally filters with an external index file based on the availability of the input files in SuryaBench
 
 ## Converting Flare Classes to Sub-Class Values

@@ -1,4 +1,6 @@
-# Binary Map Creator for Active Regions with Polarity Inversion Lines
+# Dataset Generator for Active Regions with Polarity Inversion Lines
+
+## Description 
 
 This project provides C++ and Python tools to generate:
 
@@ -41,6 +43,14 @@ SuryaBench/
 │   └── dockerfile         # Docker environment setup  
 └── CMakeLists.txt         # Build system config  
 
+## Features
+- Creates solar AR segmentation maps from magnetogram rasters. Maps represent ARs with polarity inversion lines. 
+- Docker or local options are available, with GPU and CPU options
+- Iterates over folders, expects magnetogram rasters (Expected input raster size is 4096×4096.)
+- AR with PIL detection is parametrized (configuration can be changed from `config.yaml`), more on the detection algorithm can be found in Khani et al. [https://arxiv.org/pdf/2508.17195].
+- Python script for creating a data loader/index file is provided.
+
+
 ## Usage
 ### 0. **Build and Run Using Docker**
 You can either install dependencies locally or use a Docker container.
@@ -70,7 +80,7 @@ cd build
 make
 ```
 ### 2. Run the code
-The program runs based on a HARP number (e.g., year and month), which corresponds to a folder containing input FITS files:
+The program runs based on a folder name (e.g., a formatted date string including files), which is expected to contain input FITS files:
 ```bash
 ./SuryaBench 20220101
 ```
@@ -99,3 +109,10 @@ hf download nasa-ibm-ai4science/surya-bench-ar-segmentation --repo-type dataset 
 ```
 
 - A link to train model using Surya/Unet https://github.com/NASA-IMPACT/Surya/tree/main/downstream_examples/ar_segmentation
+
+## Requirements [Local Installation]
+
+## Contact
+Jinsu Hong [jhong36@gsu.edu]
+Kang Yang [kyang30@student.gsu.edu]
+Berkay Aydin [baydin2@gsu.edu]
