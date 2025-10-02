@@ -6,7 +6,7 @@ This repository contains the preprocessing code and pipeline used to generate th
 
 The dataset is publicly available on [NASA-IMPACT HuggingFace Repository](https://huggingface.co/datasets/nasa-impact/ar_emergence).  
 
-The SOLARED consists of time series derived from **56 emerging solar active regions (ARs)** observed by the **Helioseismic and Magnetic Imager (HMI)** onboard the **Solar Dynamics Observatory (SDO)**.  
+The SOLARED consists of time series derived from **59 emerging solar active regions (ARs)** observed by the **Helioseismic and Magnetic Imager (HMI)** onboard the **Solar Dynamics Observatory (SDO)**.  
 
 - Each AR was selected based on:
   - Emergence within ±30° longitude from central meridian.  
