@@ -43,8 +43,13 @@ ar_emergence/
 └── README.md # Main documentation (this file)
 ```
 
-The raw input files (SDO/HMI Dopplergrams, magnetograms, continuum intensity) are obtained from [JSOC](http://jsoc.stanford.edu/). The outputs are compressed `.npz` files containing per-tile timelines for each AR.  
+The raw input files (SDO/HMI Dopplergrams, magnetograms, continuum intensity) are obtained from [JSOC](http://jsoc.stanford.edu/) using the following keywords: 
 
+for Doppler Velocity: su\sasha.hmi\V512x512\AR3\CR\1hr
+for Continuum intensity: su\sasha.hmi\Ic512x512\AR3\CR\45s
+for Magnetic Flux: su\sasha.hmi\M512x512\AR3\CR\45s
+
+The datasets that can be downloaded through JSOC contain .fits files in 1-hour cadence of the 512x512 pixel solar patches for each emerging AR discussed on the following "Features" section. These .fits files are processed during the "Downsampling" process in order to create ML-Ready timelines. The outputs of this process are compressed `.npz` files containing per-tile timelines for each AR.  
 
 ## Features
 
