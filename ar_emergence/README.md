@@ -58,17 +58,13 @@ Each AR is tracked in a **512×512 pixel patch** centered on the AR location. Th
 1. **Tracking:** Extract 512×512 pixel cutouts of HMI Doppler velocity, magnetic flux, and continuum intensity.  
 2. **Acoustic Power Maps:** Compute Dopplergram differences to remove solar rotation:  
 
-   \[
-   \Delta V_{\text{dop}}[i,x,y] = V_{\text{dop}}[i+1,x,y] - V_{\text{dop}}[i,x,y],
-   \]
+$$\Delta V_{\text{dop}}[i,x,y] = V_{\text{dop}}[i+1,x,y] - V_{\text{dop}}[i,x,y],$$
 
    followed by Fourier transform to compute power spectra:  
 
-   \[
-   V_{\text{dop}}^{\text{FFT}}[k,x,y] = \left(\frac{dt^2}{T}\right) \left| \mathcal{F} \{ \Delta V_{\text{dop}}[:,x,y] \}[k] \right|^2
-   \]
+$$V_{\text{dop}}^{\text{FFT}}[k,x,y] = \left(\frac{dt^2}{T}\right) \left| \mathcal{F} \{ \Delta V_{\text{dop}}[:,x,y] \}[k] \right|^2$$
 
-   where \(dt = 45\) sec, \(T = 28800\) sec, \(k=1,\dots,320\).  
+   where $dt = 45$ sec, $T = 28800$ sec, $k=1,\dots,320$.  
    
    Frequency bands: 2–3, 3–4, 4–5, 5–6 mHz.  
 
@@ -81,9 +77,9 @@ Each AR is tracked in a **512×512 pixel patch** centered on the AR location. Th
 - Output tensor: `(63,)` (predicted continuum intensity per tile).  
 
 Dynamic ranges:  
-- Acoustic power: \([-7.5 \times 10^7, \, 5.8 \times 10^7]\)  
-- Magnetic flux: \([-1.4 \times 10^2, \, 5.3 \times 10^2]\)  
-- Continuum intensity: \([-1.7 \times 10^4, \, 4.0 \times 10^3]\)  
+- Acoustic power: $[-7.5 \times 10^7, \, 5.8 \times 10^7]$  
+- Magnetic flux: $[-1.4 \times 10^2, \, 5.3 \times 10^2]$  
+- Continuum intensity: $[-1.7 \times 10^4, \, 4.0 \times 10^3]$  
 
 
 ## Usage
