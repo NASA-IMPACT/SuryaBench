@@ -1,10 +1,9 @@
 # Solar Wind Forecasting Dataset Generation
 
-This repository provides scripts to download data and create sampling splits for generating the **Solar Wind Forecasting Dataset**.  
-The dataset is derived from **NASA OMNI solar wind and IMF data** and curated by removing Interplanetary Coronal Mass Ejections (ICMEs) to retain only background solar wind.  
----
 
 ## Description
+This repository provides scripts to download data and create sampling splits for generating the **Solar Wind Forecasting Dataset**.  
+The dataset is derived from **NASA OMNI solar wind and IMF data** and curated by removing Interplanetary Coronal Mass Ejections (ICMEs) to retain only background solar wind.  
 
 - **Source Data:** NASA OMNI dataset ([CDAWeb](https://cdaweb.gsfc.nasa.gov/index.html))  
 - **Coverage:** 2010-05-13 to 2024-12-31  

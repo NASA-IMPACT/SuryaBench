@@ -4,7 +4,7 @@
 
 This Python script generates flaring activity labels using a 24h rolling prediction window. The output includes binary labels based on both the **maximum flare class** and **cumulative flare intensity** within a given time window.
 
-## Project Structure
+## Description 
 ```bash
 flare/
 ├── `flare_catalog_2010-2024.csv` – Input CSV file containing flare data  
