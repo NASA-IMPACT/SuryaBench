@@ -12,7 +12,7 @@ The SOLARED consists of time series derived from **56 emerging solar active regi
   - Emergence within ±30° longitude from central meridian.  
   - Persistence on the visible disk for at least **4 days**.  
   - Reaching a minimum area of **200 millionths of a solar hemisphere**.  
-- The dataset covers NOAA ARs from **AR11130 (2010)** through **AR13213 (2024)**.  
+- The dataset covers NOAA ARs from **AR11130 (2010)** through **AR13213 (2023)**.  
 
 This dataset provides **6-channel spatiotemporal sequences**:
 1. Four acoustic power channels (2–3, 3–4, 4–5, 5–6 mHz).  
