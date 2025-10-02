@@ -21,7 +21,6 @@ This dataset provides **6-channel spatiotemporal sequences**:
 
 Each AR is represented by **240 time steps** (12-minute cadence, ≈2 days). The dataset enables research on the physics of AR emergence and provides a benchmark for predictive modeling in space weather.
 
----
 
 ## Project Structure
 ```bash
@@ -46,7 +45,6 @@ ar_emergence/
 
 The raw input files (SDO/HMI Dopplergrams, magnetograms, continuum intensity) are obtained from [JSOC](http://jsoc.stanford.edu/). The outputs are compressed `.npz` files containing per-tile timelines for each AR.  
 
----
 
 ## Features
 
@@ -73,7 +71,7 @@ Each AR is tracked in a **512×512 pixel patch** centered on the AR location. Th
 4. **Geometric Correction:** Remove foreshortening and projection effects from solar sphere curvature.  
 5. **Timeline Creation:** Compute mean power, unsigned magnetic flux, and continuum intensity per tile across all timesteps.  
 
-**Final dataset structure per AR:**
+** Final dataset structure per AR:**
 - Input tensor: `(120, 5, 63)` (120 timesteps, 5 input channels, 63 tiles).  
 - Output tensor: `(63,)` (predicted continuum intensity per tile).  
 
@@ -92,7 +90,6 @@ python mean_tiles.py --ar_id 11130
 python create_datasets.py
 ```
 
-
 ## Requirements
 - Python ≥ 3.9  
 - NumPy, SciPy  
@@ -101,6 +98,11 @@ python create_datasets.py
 - h5py  
 - scikit-learn  
 - tqdm  
+
+Install dependencies:
+```bash
+pip install numpy, scipy, astropy, sunpy, h5py, sklearn, tqdm
+```
 
 ## Contact
 Spiridon Kasapis (skasapis@princeton.edu)
