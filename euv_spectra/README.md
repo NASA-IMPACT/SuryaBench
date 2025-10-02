@@ -6,7 +6,7 @@ This repository provides utilities for preparing and loading EUV irradiance spec
 
 ## Repository Structure
 
-- `prepare_data.ipynb`  
+- `prepare_data.py`  
   Jupyter notebook to load, preprocess, and save training input (`X_train`) and target (`Y_train`) tensors. Handles tensor conversion, shape formatting, and disk saving.
 
 - `eve_dataloader.py`  
