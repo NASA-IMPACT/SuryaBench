@@ -53,6 +53,10 @@ Merged array of shape (4, 180), representing data along the L1 subsatellite trac
 | 2 | julian date of subsatellite track |
 | 3 | b angles correspond to values when central longs of pixels lie on CM |
 
+### HDU #3: Coronal Potential Field Source Surface (PFSS) Spherical Harmonic Coefficients 
+
+Array of shape (2, 91, 91) representing the G and H spherical harmonic coefficients of the coronal PFSS solution, Schmidt normalized. Because the files were written in fortran, these are upper triangular matrices when read in C array order. We recommend the [PySHTools](https://shtools.github.io/SHTOOLS/) library for working with spherical harmonics in python. 
+
 ## Usage
 
 ## Requirements
