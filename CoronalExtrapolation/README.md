@@ -55,7 +55,7 @@ Merged array of shape (4, 180), representing data along the L1 subsatellite trac
 
 ### HDU #3: Coronal Potential Field Source Surface (PFSS) Spherical Harmonic Coefficients 
 
-Array of shape (2, 91, 91) representing the G and H spherical harmonic coefficients of the coronal PFSS solution, Schmidt normalized. Because the files were written in fortran, these are upper triangular matrices when read in C array order. We recommend the [PySHTools](https://shtools.github.io/SHTOOLS/) library for working with spherical harmonics in python. 
+Array of shape (2, 91, 91) representing the G and H spherical harmonic coefficients of the coronal PFSS solution, Schmidt normalized. Because the files were written in fortran, these are upper triangular matrices when read in C array order. We recommend the [PySHTools](https://shtools.github.io/SHTOOLS/) library for working with spherical harmonics in python, including evaluating `B` vectors at arbitrary points.
 
 ### HDU #4: Internal Records
 This HDU holds internal records and can be ignored. 
@@ -63,7 +63,9 @@ This HDU holds internal records and can be ignored.
 ## Usage
 
 ## Requirements
-
-
+```
+joblib==1.4.2
+joblib_progress==1.0.6
+```
 ## Contact
 Daniel da Silva, [daniel.e.dasilva@nasa.gov](daniel.e.dasilva@nasa.gov)
