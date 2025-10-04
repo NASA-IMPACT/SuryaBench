@@ -11,6 +11,24 @@ This dataset emulate the physics-based ADAPT-WSA PFSS model. The parameters to p
 
 ## Features
 
+For each timestamp, there 12 realization FITS files (labeled R000 - R011) identifying members of an ensemble. Each FITS file has five HDU's. We describe them below in zero-based order:
+
+### HDU #0
+Merged array of shape (10, 90, 180), representing 10 arrays over spherical coordinates. The arrays are:
+
+| Array Index | Description |
+|-------------|-------------|
+| 0 | Coronal field at outer boundary (nT) |
+| 1 | Flux tube expansion factor eval. at the source surface |
+| 2 | Colat. of open field footpoints at photosphere (rad) |
+| 3 | Long. of open field footpoints (rad) (Take abs. value of Long and add carrLongitude HDU attribute to get correct value) |
+| 4 | Photospheric Field (G) |
+| 5 | Dist. from open field footpoint to nearest coronal bndry (deg) |
+| 6 | Open (1,2,3) and closed (0) regions on the photosphere (1=in-to-out tracing; 2=out-to-in tracing; 3=both) |
+| 7 | Dist. to current sheet at outer boundary |
+| 8 | Coronal field at user defined radius (nT) |
+| 9 | Squashing factor at outer boundary |
+
 ## Usage
 
 ## Requirements
