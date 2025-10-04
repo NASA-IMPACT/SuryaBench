@@ -43,6 +43,16 @@ Merged array of shape (8, 3, 180), representing data alond the L1 subsatellite t
 | 6 | Dist. from subsatellite point to current sheet (deg) |
 | 7 | Squashing factor eval. at outer boundary |
 
+### HDU #2: More Arrays over Subsatellite Track
+Merged array of shape (4, 180), representing data along the L1 subsatellite track. The dimension 4 arrays are:
+
+| Array Index | Description |
+|-------------|-------------|
+| 0 | co-lat. of subsatellite track (rad) |
+| 1 | orbital radius of subsatellite track (AU) |
+| 2 | julian date of subsatellite track |
+| 3 | b angles correspond to values when central longs of pixels lie on CM |
+
 ## Usage
 
 ## Requirements
