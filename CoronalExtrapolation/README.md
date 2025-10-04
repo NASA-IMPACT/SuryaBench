@@ -57,6 +57,9 @@ Merged array of shape (4, 180), representing data along the L1 subsatellite trac
 
 Array of shape (2, 91, 91) representing the G and H spherical harmonic coefficients of the coronal PFSS solution, Schmidt normalized. Because the files were written in fortran, these are upper triangular matrices when read in C array order. We recommend the [PySHTools](https://shtools.github.io/SHTOOLS/) library for working with spherical harmonics in python. 
 
+### HDU #4: Internal Records
+This HDU holds internal records and can be ignored. 
+
 ## Usage
 
 ## Requirements
