@@ -1,4 +1,6 @@
-# Binary Map Creator for Active Regions with Polarity Inversion Lines
+# Dataset Generator for Active Regions with Polarity Inversion Lines
+
+## Description 
 
 This project provides C++ and Python tools to generate:
 
@@ -23,8 +25,8 @@ The following files need to be modified based on your environment and data locat
 - `./dataloader/ar.py`  
   example of dataloader using our binary maps and input data files (multi-channel 4096x4096 rasters)
 
-
-SuryaBench/  
+```bash
+ar_segmentation/  
 ├── main.cpp               # C++ code to generate binary maps  
 ├── config.yaml            # Configuration file (YAML format)  
 ├── dataloader/
@@ -40,6 +42,15 @@ SuryaBench/
 ├── docker/  
 │   └── dockerfile         # Docker environment setup  
 └── CMakeLists.txt         # Build system config  
+```
+
+## Features
+- Creates solar AR segmentation maps from magnetogram rasters. Maps represent ARs with polarity inversion lines. 
+- Docker or local options are available, with GPU and CPU options
+- Iterates over folders, expects magnetogram rasters (Expected input raster size is 4096×4096.)
+- AR with PIL detection is parametrized (configuration can be changed from `config.yaml`), more on the detection algorithm can be found in Khani et al. [https://arxiv.org/pdf/2508.17195].
+- Python script for creating a data loader/index file is provided.
+
 
 ## Usage
 ### 0. **Build and Run Using Docker**
@@ -70,7 +81,7 @@ cd build
 make
 ```
 ### 2. Run the code
-The program runs based on a HARP number (e.g., year and month), which corresponds to a folder containing input FITS files:
+The program runs based on a folder name (e.g., a formatted date string including files), which is expected to contain input FITS files:
 ```bash
 ./SuryaBench 20220101
 ```
@@ -85,3 +96,30 @@ You can run the full pipeline using the provided script:
 ```bash
 python ./index_file/ar_index_creator.py
 ```
+
+### 5. Download and Train with Surya AR Segmentation Dataset
+- Download the processed data from huggingface:  
+
+For downloading index files,
+```
+hf download nasa-ibm-ai4science/surya-bench-ar-segmentation --repo-type dataset --local-dir surya_ar_segmentation --include "*.csv"
+```
+For downloading 4096x4096 binary maps,
+```
+hf download nasa-ibm-ai4science/surya-bench-ar-segmentation --repo-type dataset --local-dir surya_ar_segmentation --include "*.tar.gz"
+```
+
+- A link to train model using Surya/Unet https://github.com/NASA-IMPACT/Surya/tree/main/downstream_examples/ar_segmentation
+
+## Requirements [Local Installation]
+| Component           | Version/Detail     |
+|---------------------|--------------------|
+| Operating System    | Ubuntu 20.04       |
+| NVIDIA CUDA Toolkit | 11.5.2             |
+| cuDNN Library       | 8                  |
+
+
+## Contact
+Jinsu Hong [jhong36@gsu.edu]  
+Kang Yang [kyang30@student.gsu.edu]  
+Berkay Aydin [baydin2@gsu.edu]

@@ -1,66 +1,118 @@
-## Active Region Emergence Prediction
+# Data Generation for Active Region Emergence Dataset 
 
-This  contains code and model implementations for forecasting continuum intensity from spatiotemporal solar data. The dataset includes physical measurements from active regions on the Sun, preprocessed into a format that captures both spatial and temporal dynamics.
+## Description
 
----
+This repository contains the preprocessing code and pipeline used to generate the **SOLar Active Region Emergence Dataset (SOLARED)**. The dataset is designed for machine learning applications in heliophysics, enabling the prediction of continuum intensity variations from spatiotemporal solar observations.  
 
-### 📊 Dataset Description
+The dataset is publicly available on [NASA-IMPACT HuggingFace Repository](https://huggingface.co/datasets/nasa-impact/ar_emergence).  
 
-**Dataset can be found at [NASA-IMPACT HuggingFace Repository](https://huggingface.co/datasets/nasa-impact/ar_emergence)**
+The SOLARED consists of time series derived from **59 emerging solar active regions (ARs)** observed by the **Helioseismic and Magnetic Imager (HMI)** onboard the **Solar Dynamics Observatory (SDO)**.  
 
-Each sample in the dataset corresponds to a tracked active region and is structured as follows:
-- Input shape: (120, 5, 63)
-- 120 timesteps per sample (≈24 hours at 12-minute cadence)
-- 5 physical quantities:
-- 1: Mean unsigned magnetic flux
-- 2–5: Doppler velocity acoustic power in frequency bands: 2–3, 3–4, 4–5, and 5–6 mHz
-- 63 spatial tiles, extracted from a 9×9 grid with top and bottom rows removed (7×9 = 63).
-- Input timestamps: (120,)
-- Output shape: (63,)
-- Scalar continuum intensity prediction per tile
-- Output timestamp:  (single value per prediction)
+- Each AR was selected based on:
+  - Emergence within ±30° longitude from central meridian.  
+  - Persistence on the visible disk for at least **4 days**.  
+  - Reaching a minimum area of **200 millionths of a solar hemisphere**.  
+- The dataset covers NOAA ARs from **AR11130 (2010)** through **AR13213 (2023)**.  
+
+This dataset provides **6-channel spatiotemporal sequences**:
+1. Four acoustic power channels (2–3, 3–4, 4–5, 5–6 mHz).  
+2. Unsigned magnetic flux.  
+3. Continuum intensity.  
+
+Each AR is represented by **240 time steps** (12-minute cadence, ≈2 days). The dataset enables research on the physics of AR emergence and provides a benchmark for predictive modeling in space weather.
 
 
-### 🚀 Example Usage
-
-For training run the below code
-
-1. **SpatioTemporalAttention Transformer**
+## Project Structure
+```bash
+ar_emergence/
+├── preprocessing/ # Dataset preprocessing pipeline
+│   ├── create_datasets.py # Create train/valid/test splits
+│   ├── functions.py # Utility functions for preprocessing
+│   ├── mean_tiles.py # Generate mean tile time series
+│   ├── preprocess_functions.py # Core preprocessing functions
+│   └── README.md
+│── ar_models/ # Model architectures (e.g., SpatioTemporalAttention, ResNet)
+├── ds_configs/ # YAML configuration files for experiments
+├── ds_datasets/ # Dataset classes and dataloaders
+├── shell_scripts/ # Helper bash scripts for running jobs
+│── compute_stats.py # Script to compute dataset statistics
+├── get_baselines.py # Utility for retrieving baseline results
+├── inference.py # Run inference using trained models
+├── train_baselines.py # Train baseline models on AR Emergence Dataset
+│── init.py
+└── README.md # Main documentation (this file)
 ```
-python train_baselines.py --config_path ./ds_configs/config_spectformer_ar_sta.yaml --gpu 
+
+The raw input files (SDO/HMI Dopplergrams, magnetograms, continuum intensity) are obtained from [JSOC](http://jsoc.stanford.edu/) using the following keywords: 
+
+for Doppler Velocity: su\sasha.hmi\V512x512\AR3\CR\1hr
+for Continuum intensity: su\sasha.hmi\Ic512x512\AR3\CR\45s
+for Magnetic Flux: su\sasha.hmi\M512x512\AR3\CR\45s
+
+The datasets that can be downloaded through JSOC contain .fits files in 1-hour cadence of the 512x512 pixel solar patches for each emerging AR discussed on the following "Features" section. These .fits files are processed during the "Downsampling" process in order to create ML-Ready timelines. The outputs of this process are compressed `.npz` files containing per-tile timelines for each AR.  
+
+## Features
+
+Each AR is tracked in a **512×512 pixel patch** centered on the AR location. The preprocessing follows a **five-step pipeline**:  
+
+1. **Tracking:** Extract 512×512 pixel cutouts of HMI Doppler velocity, magnetic flux, and continuum intensity.  
+2. **Acoustic Power Maps:** Compute Dopplergram differences to remove solar rotation:  
+
+$$\Delta V_{\text{dop}}[i,x,y] = V_{\text{dop}}[i+1,x,y] - V_{\text{dop}}[i,x,y],$$
+
+   followed by Fourier transform to compute power spectra:  
+
+$$V_{\text{dop}}^{\text{FFT}}[k,x,y] = \left(\frac{dt^2}{T}\right) \left| \mathcal{F} \{ \Delta V_{\text{dop}}[:,x,y] \}[k] \right|^2$$
+
+   where $dt = 45$ sec, $T = 28800$ sec, $k=1,\dots,320$.  
+   
+   Frequency bands: 2–3, 3–4, 4–5, 5–6 mHz.  
+
+3. **Downsampling:** Divide each 512×512 patch into a **9×9 grid** of tiles. Remove top and bottom rows → **63 tiles** remain.  
+4. **Geometric Correction:** Remove foreshortening and projection effects from solar sphere curvature.  
+5. **Timeline Creation:** Compute mean power, unsigned magnetic flux, and continuum intensity per tile across all timesteps.  
+
+** Final dataset structure per AR:**
+- Input tensor: `(120, 5, 63)` (120 timesteps, 5 input channels, 63 tiles).  
+- Output tensor: `(63,)` (predicted continuum intensity per tile).  
+
+Dynamic ranges:  
+- Acoustic power: $[-7.5 \times 10^7, \, 5.8 \times 10^7]$  
+- Magnetic flux: $[-1.4 \times 10^2, \, 5.3 \times 10^2]$  
+- Continuum intensity: $[-1.7 \times 10^4, \, 4.0 \times 10^3]$  
+
+
+## Usage
+```bash
+# Step 1: Download raw data from JSOC
+# Step 2: Run preprocessing
+python mean_tiles.py --ar_id 11130
+# Step 3: Create dataset splits
+python create_datasets.py
 ```
 
-2. **SpatioTemporalResNet**
+## Requirements
+- Python ≥ 3.9  
+- NumPy, SciPy  
+- Astropy  
+- SunPy  
+- h5py  
+- scikit-learn  
+- tqdm  
+
+Install dependencies:
+```bash
+pip install numpy, scipy, astropy, sunpy, h5py, sklearn, tqdm
 ```
-python train_baselines.py --config_path ./ds_configs/config_ar_stresnet.yaml --gpu 
-```
 
-### 🧠 Models
-
-1. **SpatioTemporalAttention Transformer**
-
-    Input shape: `(B, 120, 5, 63)`
-    Output shape: `(B, 63)`
-
-    A two-stage transformer architecture:
-    - Temporal Transformer: models per-tile temporal evolution.
-    - Spatial Transformer: models spatial interactions at each timestep.
-
-    Core features:
-    - Sinusoidal positional encodings for time and space.
-    - Per-tile temporal encoding.
-    - Per-timestep spatial encoding.
-    - Mean-pooling over time followed by per-cell regression.
+## Contact
+Spiridon Kasapis (skasapis@princeton.edu)
 
 
-2. **SpatioTemporalResNet**
 
-    Input shape: `(B, 120, 5, 63)`
-    Output shape: `(B, 63)`
 
-    A 3D ResNet-18 variant adapted for spatiotemporal input:
-    - Uses PyTorch’s r3d_18 as the backbone.
-    - First 3D convolution modified to accept 5 channels.
-    - Output layer adapted to predict 63 values (one per tile).
+
+
+
 
 
