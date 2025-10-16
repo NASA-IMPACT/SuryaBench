@@ -131,16 +131,13 @@ def rolling_window(
         else:
             target_cumulative = 0
 
-        # result.append([window_start, ins, cumulative_index, target, target_cumulative])
-        result.append([window_start, target, target_cumulative])
-
+        result.append([window_start, ins, cumulative_index, target, target_cumulative])
         window_start += timedelta(**cadence)
 
-    # cols = ["timestep", "max_goes_class", "cumulative_index", "label_max", "label_cum"]
-    cols = ["timestep", "label_max", "label_cum"]
+    cols = ["timestamp", "max_goes_class", "cumulative_index", "label_max", "label_cum"]
 
     df = pd.DataFrame(result, columns=cols)
-    df["timestep"] = df["timestep"].dt.strftime("%Y-%m-%d %H:%M:%S")
+    df["timestamp"] = df["timestamp"].dt.strftime("%Y-%m-%d %H:%M:%S")
 
     # if valid_input_df is True
     # Merge two data from input index file and flare index file.
@@ -149,7 +146,7 @@ def rolling_window(
         df_input = pd.read_csv("./index_all.csv")
         df_input = df_input.loc[df_input["present"] == 1, :]
 
-        df = df.merge(df_input, how="inner", left_on="timestep", right_on="timestep")
+        df = df.merge(df_input, how="inner", left_on="timestamp", right_on="timestamp")
         df = df[cols]
 
     print(f"Total {len(df)} instances!")
@@ -164,62 +161,96 @@ def rolling_window(
     return df
 
 
-# Creating time-segmented 4 tri-monthly partitions
-def split_dataset(df: pd.DataFrame, savepath: str = "/"):
+def assign_split(t):
     """
-    Split the dataset into 4 different subsets
-    and save each as CSV.
+    Assign a split label (train/val/test/leaky_val) based on timestamp.
 
-    First buffer: Weeks 1-2 of each year from 2010 to 2019
-    validation: Weeks 3-4 of each year from 2010 to 2019
-    Second buffer: Weeks 5-6 of each year from 2010 to 2019
-    Training: Weeks 7~52 of each year from 2010 to 2019
-    Testing: Weeks 1~52 of each year from Jan 1, 2020 to Dec 31st, 2024
+    Data Split Strategy:
+        Training Set: 
+            - All days in 2010
+            - All days from 2011 to 2019, excluding the dates used in the validation and leaky validation sets
+        Validation Set: January 15–31 for each year from 2011 to 2019
+        Leaky Validation Set: January 1–14 or February 1–14 for each year from 2011 to 2019
+        Test Set: All days from January 1, 2020 onward
 
     Parameters:
     -----------
-    df : pd.DataFrame
-        Dataset with 'timestep' and label columns.
-    savepath : str
-        Path to save the partitioned CSV files.
+    t : pd.Timestamp
+        Timestamp to assign split label
 
     Returns:
     --------
-    None
+    str : Split label ('training', 'validation', 'test', 'leaky_validation')
     """
-    # Ensure datetime conversion
-    df = df.copy()
-    df["timestep"] = pd.to_datetime(df["timestep"], errors="coerce")
-    df['day_of_year'] = df['timestep'].dt.dayofyear - 1
+    if t >= pd.Timestamp("2020-01-01"):
+        return "test"
+    if t.year <= 2010:
+        return "training"
+    if 2011 <= t.year <= 2019:
+        m, d = t.month, t.day
+        if (m == 1 and 1 <= d <= 14) or (m == 2 and 1 <= d <= 14):
+            return "leaky_validation"
+        if (m == 1 and 15 <= d <= 31):
+            return "validation"
+        return "training"
+    return "training"
 
-    # Define year masks
-    train_val_years = df["timestep"].dt.year.between(2010, 2019)
-    test_years = df["timestep"].dt.year.between(2020, 2024)
 
-    splits = {
-        "first_buffer": df[train_val_years & df['day_of_year'].between(0, 13)],    # days 0–13 → weeks 1–2
-        "validation": df[train_val_years & df['day_of_year'].between(14, 27)],    # days 14–27 → weeks 3–4
-        "second_buffer": df[train_val_years & df['day_of_year'].between(28, 41)], # days 28–41 → weeks 5–6
-        "training": df[train_val_years & (df['day_of_year'] >= 42)],             # day 42 → week 7 onwards
-        "testing": df[test_years]                                                # all days in 2020–2024
-    }
+def split_dataset(df: pd.DataFrame, savepath: str = "/"):
+    """
+    Split the dataset into train/val/test/leaky_val sets based on timestamps.
 
-    # Create leaky validation (combination of both buffers)
-    splits["leaky_validation"] = pd.concat(
-        [splits["first_buffer"], splits["second_buffer"]],
-        axis=0
-    ).sort_values("timestep")
+    This function:
+    1. Loads the data.csv file
+    2. Assigns split labels based on date rules
+    3. Saves split files to OUTPUT_DIR
+    """
+    print("\n" + "="*60)
+    print("Splitting dataset into train/val/test/leaky_val...")
+    print("="*60)
 
-    # Save to CSV if requested
-    if savepath:
-        os.makedirs(savepath, exist_ok=True)
-        for name, subset in splits.items():
-            fname = f"flare_cls_{name}_1h.csv"
-            path = os.path.join(savepath, fname)
-            subset[["timestep", "label_cum", "label_max"]].to_csv(path, index=False)
-            print(f"Saved {name} ({len(subset)} rows) to {path}")
+    # Ensure timestamp column is datetime type
+    df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
+    df = df.dropna(subset=["timestamp"])
 
-    return splits
+    print(f"✓ Loaded {len(df)} rows")
+    print(f"Date range: {df['timestamp'].min()} to {df['timestamp'].max()}")
+
+    # Apply split assignment
+    print("\nApplying split logic...")
+    df["split"] = df["timestamp"].apply(assign_split)
+
+    # Count splits
+    split_counts = df["split"].value_counts()
+    print("\nSplit distribution:")
+    for split_name in ['training', 'validation', 'test', 'leaky_validation']:
+        count = split_counts.get(split_name, 0)
+        percentage = (count / len(df)) * 100 if len(df) > 0 else 0
+        print(f"  {split_name:20s}: {count:6d} samples ({percentage:5.2f}%)")
+
+    # Columns to save (exclude 'split' column)
+    to_save = [c for c in df.columns if c != "split"]
+
+    # Save split files
+    print(f"\nExporting split files to {savepath}...")
+
+    train_df = df[df["split"] == "training"][to_save]
+    train_df.to_csv(savepath + "train.csv", index=False)
+    print(f"  ✓ train.csv: {len(train_df)} rows")
+
+    val_df = df[df["split"] == "validation"][to_save]
+    val_df.to_csv(savepath + "validation.csv", index=False)
+    print(f"  ✓ validation.csv: {len(val_df)} rows")
+
+    leaky_val_df = df[df["split"] == "leaky_validation"][to_save]
+    leaky_val_df.to_csv(savepath + "leaky_validation.csv", index=False)
+    print(f"  ✓ leaky_validation.csv: {len(leaky_val_df)} rows")
+
+    test_df = df[df["split"] == "test"][to_save]
+    test_df.to_csv(savepath + "test.csv", index=False)
+    print(f"  ✓ test.csv: {len(test_df)} rows")
+
+    print(f"\n✓ All split files saved to: {savepath}")
 
 
 if __name__ == "__main__":
