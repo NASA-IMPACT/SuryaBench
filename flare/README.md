@@ -4,14 +4,15 @@
 
 This Python script generates flaring activity labels using a 24h rolling prediction window. The output includes binary labels based on both the **maximum flare class** and **cumulative flare intensity** within a given time window.
 
-## Description 
+## Project Structure
 ```bash
 flare/
 ├── `flare_catalog_2010-2024.csv` – Input CSV file containing flare data  
+├── `flare_catalog.py` - Script for generating the flare catalog  
 ├── `flare_index_creator.py` – Main script for generating flare labels  
 └── `flare.py` – (Dataloader) Loads 4096×4096 input raster images and corresponding flare labels
 ```
-*If you're interested in how the `flare_catalog_2010-2024.csv` file was created, please visit the repository [here](https://bitbucket.org/gsudmlab/flare_list_creator/src/main/).*
+*The file flare_catalog_2010-2024.csv was generated using flare_catalog.py. Most of the code in flare_catalog.py is adapted from [here](https://bitbucket.org/gsudmlab/flare_list_creator/src/main/).*
 
 
 ## Features

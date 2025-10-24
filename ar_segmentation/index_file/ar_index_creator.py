@@ -16,11 +16,11 @@ import pandas as pd
 
 def parse_filename(file_path: list):
     file_name = os.path.basename(file_path)
-    
+
     # Basic validation to ensure filename has at least 6 characters for year+month
     if len(file_name) < 6 or not file_name[:6].isdigit():
         raise ValueError(f"Filename '{file_name}' must start with YYYYMM")
-    
+
     year, month = file_name[:4], file_name[4:6]
     return os.path.join("assets", year, month, file_name)
 
@@ -79,23 +79,22 @@ def index_create(
     df_all.loc[df_all["present"].isnull(), "present"] = 0
     # df_all = df_all.loc[df_all["present"] == 1, :]
     df_all = df_all[["timestep", "file_path", "present"]]
-    
+
     # Save index files
     df_all.to_csv(savepath + "ar_mask_index.csv", index=False)
     split_dataset(df_all, savepath=savepath)
 
+# create splits based on 14-17-14 day splits
 
-# Creating time-segmented 4 tri-monthly partitions
+
 def split_dataset(df: pd.DataFrame, savepath: str = "/"):
     """
-    Split the dataset into 4 different subsets
-    and save each as CSV.
+    Split the dataset into 4 different subsets and save each as CSV.
 
-    First buffer: Weeks 1-2 of each year from 2010 to 2019
-    validation: Weeks 3-4 of each year from 2010 to 2019
-    Second buffer: Weeks 5-6 of each year from 2010 to 2019
-    Training: Weeks 7~52 of each year from 2010 to 2019
-    Testing: Weeks 1~52 of each year from Jan 1, 2020 to Dec 31st, 2024
+    Leaky validation: Jan 1-14 and Feb 1-14 of each year from 2010 to 2019
+    Validation: Jan 15-31 of each year from 2010 to 2019
+    Training: Feb 15 onward of each year from 2010 to 2019
+    Testing: All data from Jan 1, 2020 to Dec 31, 2024
 
     Parameters:
     -----------
@@ -106,39 +105,52 @@ def split_dataset(df: pd.DataFrame, savepath: str = "/"):
 
     Returns:
     --------
-    None
+    dict: Dictionary containing the split DataFrames
     """
     # Ensure datetime conversion
     df = df.copy()
     df["timestep"] = pd.to_datetime(df["timestep"], errors="coerce")
-    df['day_of_year'] = df['timestep'].dt.dayofyear - 1
+    df['month'] = df['timestep'].dt.month
+    df['day'] = df['timestep'].dt.day
 
     # Define year masks
     train_val_years = df["timestep"].dt.year.between(2010, 2019)
-    test_years = df["timestep"].dt.year.between(2020, 2024)
-    
+    test_years = df["timestep"].dt.year >= 2020
+
     # Define splits
-    splits = {
-        "first_buffer": df[train_val_years & df['day_of_year'].between(0, 13)],    # days 0–13 → weeks 1–2
-        "validation": df[train_val_years & df['day_of_year'].between(14, 27)],    # days 14–27 → weeks 3–4
-        "second_buffer": df[train_val_years & df['day_of_year'].between(28, 41)], # days 28–41 → weeks 5–6
-        "training": df[train_val_years & (df['day_of_year'] >= 42)],             # day 42 → week 7 onwards
-        "testing": df[test_years]                                                # all days in 2020–2024
-    }
+    splits = {}
 
-    # Create leaky validation (combination of both buffers)
-    splits["leaky_validation"] = pd.concat(
-        [splits["first_buffer"], splits["second_buffer"]],
-        axis=0
-    ).sort_values("timestep")
+    # Leaky validation: Jan 1-14 and Feb 1-14 for years 2010-2019
+    leaky_jan = train_val_years & (df['month'] == 1) & df['day'].between(1, 14)
+    leaky_feb = train_val_years & (df['month'] == 2) & df['day'].between(1, 14)
+    splits["leaky_validation"] = df[leaky_jan | leaky_feb]
 
-    # Save to CSV if requested
+    # Validation: Jan 15-31 for years 2010-2019
+    splits["validation"] = df[train_val_years & (
+        df['month'] == 1) & df['day'].between(15, 31)]
+
+    # Training: Feb 15 onward for years 2010-2019
+    splits["training"] = df[train_val_years & (
+        ((df['month'] == 2) & (df['day'] >= 15)) | (df['month'] >= 3))]
+
+    # Testing: All data from 2020 onwards
+    splits["testing"] = df[test_years]
+
+    # Save to CSV
     if savepath:
         os.makedirs(savepath, exist_ok=True)
+        filenames = {
+            "leaky_validation": "leaky_validation.csv",
+            "validation": "validation.csv",
+            "training": "train.csv",
+            "testing": "test.csv"
+        }
+
         for name, subset in splits.items():
-            fname = f"ar_binary_mask_index_{name}_1h.csv"
+            fname = filenames[name]
             path = os.path.join(savepath, fname)
-            subset[["timestep", "file_path", "present"]].to_csv(path, index=False)
+            subset[["timestep", "file_path", "present"]].to_csv(
+                path, index=False)
             print(f"Saved {name} ({len(subset)} rows) to {path}")
 
     return splits

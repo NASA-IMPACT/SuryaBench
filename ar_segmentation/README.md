@@ -111,9 +111,7 @@ hf download nasa-ibm-ai4science/surya-bench-ar-segmentation --repo-type dataset 
 
 - A link to train model using Surya/Unet https://github.com/NASA-IMPACT/Surya/tree/main/downstream_examples/ar_segmentation
 
-## Requirements [Local Installation]
-
 ## Contact
-Jinsu Hong [jhong36@gsu.edu]
-Kang Yang [kyang30@student.gsu.edu]
+Jinsu Hong [jhong36@gsu.edu]  
+Kang Yang [kyang30@student.gsu.edu]  
 Berkay Aydin [baydin2@gsu.edu]

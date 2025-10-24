@@ -663,19 +663,19 @@ int main(int argc, char *argv[])
     std::cout << "Positive Gauss Threshold: " << config.pos_gauss << std::endl;
     std::cout << "Negative Gauss Threshold: " << config.neg_gauss << std::endl;
 
-    // Get HARP number from command-line arguments
+    // Get Year/month number from command-line arguments
     if (argc < 2)
     {
-        std::cerr << "Please provide HARP number as a command-line argument." << std::endl;
+        std::cerr << "Please provide year/month as a command-line argument." << std::endl;
         return 1;
     }
-    std::string harp_no = argv[1];
-    std::cout << "Processing full-disk(year/month/day): " << harp_no << std::endl;
+    std::string month = argv[1];
+    std::cout << "Processing full-disk(year/month/day): " << month << std::endl;
 
     // Create directory paths using config
-    std::string data_dir = config.data_dir + harp_no + "/";
-    std::string out_dir = config.output_dir + harp_no + "/";
-    std::string log_fn = config.log_dir + harp_no + "/";
+    std::string data_dir = config.data_dir + month + "/";
+    std::string out_dir = config.output_dir + month + "/";
+    std::string log_fn = config.log_dir + month + "/";
 
     // Create output directory if it doesn~@~Yt exist
     int dir_created_out = create_directory(out_dir);
@@ -710,7 +710,7 @@ int main(int argc, char *argv[])
     // Stop the timer and print the execution duration
     auto endTime = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
-    std::cout << "Full-disk: " << harp_no << " Execution time: " << duration.count() << " milliseconds" << std::endl;
+    std::cout << "Full-disk: " << month << " Execution time: " << duration.count() << " milliseconds" << std::endl;
 
     return 0;
 }

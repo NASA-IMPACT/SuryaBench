@@ -26,15 +26,18 @@ import pandas as pd
 
 
 def parse_args() -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Split omni ICME CSV into train/val/buffer/test using Surya schema")
+    p = argparse.ArgumentParser(
+        description="Split omni ICME CSV into train/val/buffer/test using Surya schema")
     p.add_argument("--input", "-i", required=False, default="csv_files/omni_icme_removed_solar_wind.csv",
                    help="Path to input CSV (default: csv_files/omni_icme_removed_solar_wind.csv)")
     p.add_argument("--out-dir", "-o", required=False, default="csv_files/",
                    help="Output directory for split CSVs (default: csv_files/)")
     p.add_argument("--date-col", required=False, default=None,
                    help="Name of the date column in the CSV. If omitted, will try common names.")
-    p.add_argument("--dry-run", action="store_true", help="Don't write files; only report counts")
+    p.add_argument("--dry-run", action="store_true",
+                   help="Don't write files; only report counts")
     return p.parse_args()
+
 
 def split_dataframe(df: pd.DataFrame, date_col: str):
     # Ensure datetime
@@ -42,65 +45,74 @@ def split_dataframe(df: pd.DataFrame, date_col: str):
     df[date_col] = pd.to_datetime(df[date_col], errors="coerce")
     if df[date_col].isna().any():
         nbad = int(df[date_col].isna().sum())
-        raise ValueError(f"{nbad} rows could not be parsed as datetimes in column '{date_col}'")
+        raise ValueError(
+            f"{nbad} rows could not be parsed as datetimes in column '{date_col}'")
 
-    # filter to requested overall date range: 2010-05-01 .. 2024-12-31
-    min_dt = pd.to_datetime("2010-05-01")
+    # filter to requested overall date range: 2010-05-13 .. 2024-12-31
+    min_dt = pd.to_datetime("2010-05-13")
     max_dt = pd.to_datetime("2024-12-31")
     before_count = len(df)
-    df = df[(df[date_col] >= min_dt) & (df[date_col] <= max_dt)].reset_index(drop=True)
+    df = df[(df[date_col] >= min_dt) & (
+        df[date_col] <= max_dt)].reset_index(drop=True)
     after_count = len(df)
     dropped = before_count - after_count
     if dropped > 0:
-        print(f"Filtered data to {min_dt.date()}..{max_dt.date()}: dropped {dropped} rows ({before_count} -> {after_count})")
+        print(
+            f"Filtered data to {min_dt.date()}..{max_dt.date()}: dropped {dropped} rows ({before_count} -> {after_count})")
 
     # add helpers
     df["year"] = df[date_col].dt.year
-    # dayofyear is 1-based; convert to 0-based index
-    df["day_idx"] = df[date_col].dt.dayofyear - 1
+    df["month"] = df[date_col].dt.month
+    df["day"] = df[date_col].dt.day
 
     train_parts = []
     val_parts = []
-    buffer_parts = []
+    leaky_val_parts = []
     test_parts = []
 
     for year, group in df.groupby("year"):
-        if 2010 <= year <= 2019:
-            # map day_idx to segments
+        if year == 2010:
+            # All data = 2010 -> training
+            train_parts.append(group)
+        elif 2011 <= year <= 2019:
+            # Split based on month and day
             g = group.copy()
-            # create assignment column
-            def assign(day_idx: int) -> str:
-                if 0 <= day_idx < 14:
-                    return "buffer"
-                if 14 <= day_idx < 28:
+
+            def assign(row) -> str:
+                m, d = row["month"], row["day"]
+                # Jan 1-14 or Feb 1-14 -> leaky_validation
+                if (m == 1 and 1 <= d <= 14) or (m == 2 and 1 <= d <= 14):
+                    return "leaky_val"
+                # Jan 15-31 -> validation
+                if m == 1 and 15 <= d <= 31:
                     return "val"
-                if 28 <= day_idx < 42:
-                    return "buffer"
-                # day_idx >= 42
+                # Other dates -> training
                 return "train"
 
-            g["_split"] = g["day_idx"].apply(assign)
+            g["_split"] = g.apply(assign, axis=1)
             train_parts.append(g[g["_split"] == "train"])
             val_parts.append(g[g["_split"] == "val"])
-            buffer_parts.append(g[g["_split"] == "buffer"])
+            leaky_val_parts.append(g[g["_split"] == "leaky_val"])
         elif 2020 <= year <= 2024:
+            # All data >= 2020 -> test
             test_parts.append(group)
-        else:
-            # years outside required ranges will be ignored but kept as buffer for safety
-            buffer_parts.append(group)
 
-    train_df = pd.concat(train_parts, ignore_index=True) if train_parts else pd.DataFrame(columns=df.columns)
-    val_df = pd.concat(val_parts, ignore_index=True) if val_parts else pd.DataFrame(columns=df.columns)
-    buffer_df = pd.concat(buffer_parts, ignore_index=True) if buffer_parts else pd.DataFrame(columns=df.columns)
-    test_df = pd.concat(test_parts, ignore_index=True) if test_parts else pd.DataFrame(columns=df.columns)
+    train_df = pd.concat(
+        train_parts, ignore_index=True) if train_parts else pd.DataFrame(columns=df.columns)
+    val_df = pd.concat(val_parts, ignore_index=True) if val_parts else pd.DataFrame(
+        columns=df.columns)
+    leaky_val_df = pd.concat(
+        leaky_val_parts, ignore_index=True) if leaky_val_parts else pd.DataFrame(columns=df.columns)
+    test_df = pd.concat(test_parts, ignore_index=True) if test_parts else pd.DataFrame(
+        columns=df.columns)
 
     # drop helper cols before returning
-    for d in (train_df, val_df, buffer_df, test_df):
-        for c in ("year", "day_idx", "_split"):
+    for d in (train_df, val_df, leaky_val_df, test_df):
+        for c in ("year", "month", "day", "_split"):
             if c in d.columns:
                 d.drop(columns=[c], inplace=True)
 
-    return train_df, val_df, buffer_df, test_df
+    return train_df, val_df, leaky_val_df, test_df
 
 
 def write_splits(out_dir: str, base_name: str, splits: dict[str, pd.DataFrame], dry_run: bool = False):
@@ -125,17 +137,20 @@ def main():
     df = pd.read_csv(inp)
     date_col = "Epoch"
 
-    train_df, val_df, buffer_df, test_df = split_dataframe(df, date_col)
+    train_df, val_df, leaky_val_df, test_df = split_dataframe(df, date_col)
 
-    splits = {"training": train_df, "validation": val_df, "leaky_validation": buffer_df, "test": test_df}
+    splits = {"training": train_df, "validation": val_df,
+              "leaky_validation": leaky_val_df, "test": test_df}
 
-    results = write_splits(out_dir, "omni_icme_removed", splits, dry_run=args.dry_run)
+    results = write_splits(out_dir, "omni_icme_removed",
+                           splits, dry_run=args.dry_run)
 
     # report
     print("Split results:")
     total = 0
     for name, (path, cnt) in results.items():
-        print(f" - {name}: {cnt} rows -> {path if not args.dry_run else '(dry-run)'}")
+        print(
+            f" - {name}: {cnt} rows -> {path if not args.dry_run else '(dry-run)'}")
         total += cnt
     print(f"Total rows assigned: {total}")
 
