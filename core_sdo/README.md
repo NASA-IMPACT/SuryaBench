@@ -26,7 +26,7 @@ core_sdo/
 ├── plot_nc.py                        # Quicklook plotter for processed NetCDF4 files
 ├── requirements.txt                  # Python dependencies
 └── README.md                         # Documentation (this file)
-
+```
 
 
 ## Requirements
