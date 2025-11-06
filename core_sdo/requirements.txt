@@ -1,0 +1,11 @@
+numpy
+xarray
+sunpy
+aiapy
+scikit-image
+astropy
+h5netcdf
+hdf5plugin
+drms
+requests
+
