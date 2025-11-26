@@ -11,6 +11,6 @@
 #SBATCH --exclusive                             # Exclusive node allocation
 #SBATCH --ntasks-per-node=1                     # Number of tasks per node
 
-source /lustre/fs0/scratch/shared/miniconda3/bin/activate && conda activate srm-heliofm
+source miniconda3/bin/activate && conda activate srm-heliofm
 
 python train_baselines.py --config_path ./ds_configs/config_spectformer_ar_sta.yaml --gpu --wandb

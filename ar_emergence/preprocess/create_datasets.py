@@ -23,17 +23,17 @@ sasha = False # Do you want to save the .fits files for Sasha?
 freq_ranges = [[2,3],[3,4],[4,5],[5,6]] # Select Power Map Frequency Ranges
 
 # Dopplergrams
-dopplergram_files = glob.glob(os.path.join("/nobackup/skasapis/AR{}/dopplergrams/".format(ar_num), "*.fits")) # get a list of all files with a .fits extension in the directory
+dopplergram_files = glob.glob(os.path.join("./AR{}/dopplergrams/".format(ar_num), "*.fits")) # get a list of all files with a .fits extension in the directory
 dopplergram_files = sorted(dopplergram_files, key=os.path.getmtime, reverse=True) # sort the files by their modified time (latest file first)
 dopplergram_files.reverse()
 
 # Continuous Intensity
-intensity_files = glob.glob(os.path.join("/nobackup/skasapis/AR{}/cont_intensity/".format(ar_num), "*.fits")) # get a list of all files with a .fits extension in the directory
+intensity_files = glob.glob(os.path.join("./AR{}/cont_intensity/".format(ar_num), "*.fits")) # get a list of all files with a .fits extension in the directory
 intensity_files = sorted(intensity_files, key=os.path.getmtime, reverse=True) # sort the files by their modified time (latest file first)
 intensity_files.reverse()
 
 # Magnetograms
-magnetogram_files = glob.glob(os.path.join("/nobackup/skasapis/AR{}/magnetograms/".format(ar_num), "*.fits")) # get a list of all files with a .fits extension in the directory
+magnetogram_files = glob.glob(os.path.join("./AR{}/magnetograms/".format(ar_num), "*.fits")) # get a list of all files with a .fits extension in the directory
 magnetogram_files = sorted(magnetogram_files, key=os.path.getmtime, reverse=True) # sort the files by their modified time (latest file first)
 magnetogram_files.reverse()
 
@@ -85,7 +85,7 @@ for file_num in range(0,frames_num): # Go through every .fits file
             all_pm_int[rng_num,file_num,:,:] = calculate_power_map(int_fft,freq_ranges[rng_num]) # Calculate the power maps for the continuous intensities
 
 # Save the data in .npz files
-output_dir = '/nobackup/skasapis/AR{}'.format(ar_num)
+output_dir = './AR{}'.format(ar_num)
 if not os.path.exists(output_dir): os.makedirs(output_dir) # if the AR directory doesnt exist, create it
 
 # Put in order (Dopplergrams)

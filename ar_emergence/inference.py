@@ -116,7 +116,7 @@ def plot_ar(outputs, targets, times):
     plt.legend()
     plt.tight_layout()
     plt.savefig(
-        "/nobackupnfs1/sroy14/processed_data/Helio/aremerge_skasapis/code/downstream-heliofm/downstream_apps/ar_kasapis/combined_plot.png"
+        "./ar_kasapis/combined_plot.png"
     )
 
 
@@ -165,7 +165,7 @@ def plot_ar11698(outputs, targets, times):
 
     plt.tight_layout()
     plt.savefig(
-        "/nobackupnfs1/sroy14/processed_data/Helio/aremerge_skasapis/code/downstream-heliofm/downstream_apps/ar_kasapis/ar11698_val_plot.png"
+        "./ar_kasapis/ar11698_val_plot.png"
     )
 
 
@@ -213,7 +213,7 @@ def plot_ar11726(outputs, targets, times):
 
     plt.tight_layout()
     plt.savefig(
-        "/nobackupnfs1/sroy14/processed_data/Helio/aremerge_skasapis/code/downstream-heliofm/downstream_apps/ar_kasapis/ar11726_val_plot.png"
+        "./ar_kasapis/ar11726_val_plot.png"
     )
 
 

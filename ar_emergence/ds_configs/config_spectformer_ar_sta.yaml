@@ -1,8 +1,8 @@
 job_id: ar_SpatioTemporalAttention
 data:
   # Path to indexed HelioFM training and validation datasets
-  train_data_path: /nobackupnfs1/sroy14/processed_data/Helio/aremerge_skasapis/train_indexed_data_ar_emergence_kasapis_rohit_norm.h5
-  valid_data_path: /nobackupnfs1/sroy14/processed_data/Helio/aremerge_skasapis/test_indexed_data_ar_emergence_kasapis_rohit_norm.h5
+  train_data_path: ./processed_data/Helio/aremerge_skasapis/train_indexed_data_ar_emergence_kasapis_rohit_norm.h5
+  valid_data_path: ./processed_data/Helio/aremerge_skasapis/test_indexed_data_ar_emergence_kasapis_rohit_norm.h5
 
   flare_label_type: "maximum"
   channels: ['aia94', 'aia131', 'aia171', 'aia193', 'aia211', 'aia304', 'aia335', 'aia1600', 'hmi_bx', 'hmi_by', 'hmi_bz', 'hmi_m', 'hmi_v']

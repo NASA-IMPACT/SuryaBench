@@ -1,8 +1,8 @@
 job_id: ar_SpatioTemporalResnet
 data:
   # Use this to point at the paths of HelioFM data indices
-  train_data_path: /rgroup/aifm/aremerge_skasapis/train_indexed_data_ar_emergence_kasapis_rohit_norm.h5
-  valid_data_path: /rgroup/aifm/aremerge_skasapis/test_indexed_data_ar_emergence_kasapis_rohit_norm.h5
+  train_data_path: ./train_indexed_data_ar_emergence_kasapis_rohit_norm.h5
+  valid_data_path: ./test_indexed_data_ar_emergence_kasapis_rohit_norm.h5
   flare_label_type: "maximum"
   channels: ['aia94', 'aia131', 'aia171', 'aia193', 'aia211', 'aia304', 'aia335', 'aia1600', 'hmi_bx', 'hmi_by', 'hmi_bz', 'hmi_m', 'hmi_v']
   time_delta_input_minutes: [0]

@@ -125,8 +125,8 @@ def plot_frame_difference_metric(frame_diffs,cor_file):
 
 def lstm_ready(source,AR,tile,size):
     # Read AR and create lstm ready data
-    power_maps = np.load('/nobackup/skasapis/AR{}/power_maps_{}{}.npz'.format(AR,source,AR),allow_pickle=True) 
-    intensities = np.load('/nobackup/skasapis/AR{}/intensities{}.npz'.format(AR,AR),allow_pickle=True) 
+    power_maps = np.load('./AR{}/power_maps_{}{}.npz'.format(AR,source,AR),allow_pickle=True) 
+    intensities = np.load('./AR{}/intensities{}.npz'.format(AR,AR),allow_pickle=True) 
     power_maps23 = get_piece_means(power_maps['arr_0'],size)
     power_maps34 = get_piece_means(power_maps['arr_1'],size)
     power_maps45 = get_piece_means(power_maps['arr_2'],size)

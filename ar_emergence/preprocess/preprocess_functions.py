@@ -55,7 +55,7 @@ def save_sasha_fits(dop_fft,dop_headers,int_fft,int_headers,time):
     int_fft_file = fits.PrimaryHDU(int_fft, header)
 
     # Write the FITS file to disk
-    dop_fft_file.writeto('/nobackup/skasapis/sasha_fft/dopplergram_fft.fits', overwrite=True)
-    int_fft_file.writeto('/nobackup/skasapis/sasha_fft/cont_int_fft.fits', overwrite=True)
+    dop_fft_file.writeto('./sasha_fft/dopplergram_fft.fits', overwrite=True)
+    int_fft_file.writeto('./sasha_fft/cont_int_fft.fits', overwrite=True)
 
     t = 1

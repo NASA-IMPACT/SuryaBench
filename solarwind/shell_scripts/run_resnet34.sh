@@ -4,8 +4,8 @@ module purge
 module use -a /swbuild/analytix/tools/modulefiles
 module load miniconda3/v4
 
-export CONDA_ENVS_PATH=/nobackupnfs1/sroy14/.conda/envs
-export CONDA_PKGS_DIRS=/nobackupnfs1/sroy14/.conda/pkgs
+export CONDA_ENVS_PATH=./.conda/envs
+export CONDA_PKGS_DIRS=./.conda/pkgs
 export NODE_RANK=$1
 export NUM_NODES=$2
 export WORLD_SIZE=$3
