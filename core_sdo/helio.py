@@ -1,7 +1,7 @@
 """
 Various utility functions for processing SDO/AIA and SDO/HMI data.
 Includes functions for scaling solar disk, computing timestamps,
-processing AIA and HMI maps, grouping FITS files by time, disambiguating
+processing AIA and HMI maps, disambiguating
 HMI azimuth angles, converting HMI vector magnetogram maps to components,
 and saving the resulting maps.
 Authors: Dinesha Hegde, dinesha.hegde@gmail.com"""

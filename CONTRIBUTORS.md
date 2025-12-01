@@ -1,6 +1,6 @@
 thesujitroy <sujitroy1994@hotmail.com>
 
-dinesh-astro <dinesha.hegde@gmail.com>
+dinesh-hegde <dinesha.hegde@gmail.com>
 
 shah-astro <bahauddin.apece@gmail.com>
 

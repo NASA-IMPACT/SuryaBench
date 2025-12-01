@@ -19,7 +19,7 @@ import numpy as np
 import xarray as xr
 from sunpy.map import Map, contains_full_disk
 import hdf5plugin  # for LZ4 compression/ filter 32004
-import helio  # your module
+import helio  
 
 # CONFIG
 

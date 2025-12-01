@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Download 8 AIA + 5 HMI FITS for one time stamp from JSOC (DRMS)
+Download 8 AIA + 5 HMI FITS from JSOC
 and save them to one folder.
 
 - Uses method='url', protocol='fits' for full headers.

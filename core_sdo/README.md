@@ -2,9 +2,9 @@
 
 ## Description
 
-This repository provides scripts to **download AIA and HMI data** from the **SDO spacecraft** and preprocess it to create a **homogenized, machine learning–ready Core-SDO dataset** used in the training of **Surya**.
+This repository provides scripts to download **Atmospheric Imaging Assembly (AIA)** & **Helioseismic and Magnetic Imager(HMI)** data from **NASA's Solar Dynamics Observatory ([SDO](https://sdo.gsfc.nasa.gov/))** and preprocess it to create a **homogenized, ML–ready, core-sdo dataset** used in the training of the heliophysics foundation model, **Surya**.
 
-The data is sourced from **JSOC**, and several preprocessing steps are applied to bring AIA and HMI data into Level 1.5, ready for machine learning applications.
+The data is sourced from **Joint Science Operations Center ([JSOC](http://jsoc.stanford.edu/))**, and several preprocessing steps are applied to bring AIA and HMI data into Level 1.5, ready for machine learning applications.
 
 - **Source Data:** JSOC Full Disk FITS files 
 - **Cadence:** 12 minutes 
