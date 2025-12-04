@@ -26,7 +26,7 @@ def main():
 
     train_dataset = ThreeDMagDSDataset(
         #### All these lines are required by the parent HelioNetCDFDataset class
-        index_path="/nobackupnfs1/sroy14/processed_data/Helio/csv_files/index_201005_to_201812.csv",
+        index_path=config.data.train_data_path,
         time_delta_input_minutes=config.data.time_delta_input_minutes,
         time_delta_target_minutes=config.data.time_delta_target_minutes,
         n_input_timestamps=config.data.n_input_timestamps,
@@ -38,9 +38,9 @@ def main():
         scalers=scalers,
         phase="train",
         #### Put your donwnstream (DS) specific parameters below this line
-        ds_3dmag_index_path="/nobackupnfs1/sroy14/processed_data/Helio/daniel/heliofm_downstream_wsa_train_index_new.csv",
-        ds_3dmag_wsa_root="/nobackupnfs1/sroy14/processed_data/Helio/daniel",
-        ds_index_cache="./ds_index_cache.pickle",
+        ds_3dmag_index_path=config.data.ds_3dmag_index_path,
+        ds_3dmag_wsa_root=config.data.ds_3dmag_wsa_root,
+        ds_index_cache=config.data.ds_index_cache,
         ds_input_timesteps=[0, -7, -14],
     )
 
