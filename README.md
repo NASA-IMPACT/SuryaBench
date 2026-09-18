@@ -5,7 +5,7 @@
 
 **SuryaBench** is a standardized test benchmark for evaluating the performance of foundational AI models in Heliophysics and Space Weather Science across various tasks.  
 
-The complete dataset along with input files and application-specific instances is available through the Hugging Face platform at [nasa-impact/SuryaBench](https://huggingface.co/collections/nasa-impact/suryabench).
+The complete dataset along with input files and application-specific instances is available through the Hugging Face platform at [nasa-ibm-ai4science/SuryaBench](https://huggingface.co/collections/nasa-ibm-ai4science/suryabench).
 
 ## Application Dataset Details
 
